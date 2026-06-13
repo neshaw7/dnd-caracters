@@ -90,6 +90,22 @@ export const CLASSES = [
   'Patrulheiro',
 ] as const
 
+// Mapeia o nome PT da classe para o nome em ingles usado nas regras do Aurora.
+export const CLASS_PT_TO_EN: Record<string, string> = {
+  'Bárbaro': 'Barbarian',
+  'Bardo': 'Bard',
+  'Bruxo': 'Warlock',
+  'Clérigo': 'Cleric',
+  'Druida': 'Druid',
+  'Feiticeiro': 'Sorcerer',
+  'Guerreiro': 'Fighter',
+  'Ladino': 'Rogue',
+  'Mago': 'Wizard',
+  'Monge': 'Monk',
+  'Paladino': 'Paladin',
+  'Patrulheiro': 'Ranger',
+}
+
 export const ALIGNMENTS = [
   'Leal e Bom',
   'Neutro e Bom',

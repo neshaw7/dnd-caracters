@@ -147,13 +147,23 @@ function collapse(s: string): string {
   return s.replace(/\s+/g, ' ').trim()
 }
 
-// Texto de uma feature: prefere o <sheet><description> (resumido), senao o
-// <description> completo.
+// Remove variaveis de template do Aurora ({{...}}) que nao temos como resolver.
+function stripTemplateVars(s: string): string {
+  return s.replace(/\{\{[^}]*\}\}/g, '').replace(/\s+/g, ' ').trim()
+}
+
+// Texto de uma feature: pega so os paragrafos da descricao (ignora tabelas e
+// titulos, que viram texto embolado) e limpa variaveis de template.
 function featureText(el: Element): string {
-  const sheetDesc = el.querySelector('sheet > description')
-  if (sheetDesc?.textContent) return collapse(sheetDesc.textContent)
   const desc = el.querySelector('description')
-  return collapse(desc?.textContent ?? '')
+  if (desc) {
+    const paras = Array.from(desc.querySelectorAll('p'))
+      .map((p) => collapse(p.textContent ?? ''))
+      .filter(Boolean)
+    if (paras.length) return stripTemplateVars(paras.join(' '))
+  }
+  const sheetDesc = el.querySelector('sheet > description')
+  return stripTemplateVars(collapse(sheetDesc?.textContent ?? ''))
 }
 
 // Detecta o atributo de conjuracao dentro de uma feature (<spellcasting ability="..">).

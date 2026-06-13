@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   CLASSES,
+  CLASS_PT_TO_EN,
   ALIGNMENTS,
   SKILLS,
   abilityModifier,
@@ -13,6 +14,9 @@ import {
 import { getCharacter, updateCharacter } from '../lib/characters'
 import type { CharacterData } from '../types/character'
 import { emptyCharacterData } from '../types/character'
+import { getRuleClassByName } from '../lib/aurora/rulesStore'
+import { applyRules, AUTO_MARK } from '../lib/aurora/autofill'
+import type { ParsedClass } from '../lib/aurora/parse'
 import {
   TextField,
   NumberField,
@@ -40,6 +44,8 @@ export function CharacterEditor() {
   const [race, setRace] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
   const [data, setData] = useState<CharacterData>(emptyCharacterData())
+  const [ruleClass, setRuleClass] = useState<ParsedClass | null>(null)
+  const [rulesMsg, setRulesMsg] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -76,6 +82,49 @@ export function CharacterEditor() {
     setDirty(true)
     setSavedAt(false)
   }, [])
+
+  // Preenchimento automatico das regras (classe + subclasse + nivel).
+  const aplicarRegras = useCallback(
+    (rc: ParsedClass) => {
+      const archetype = rc.archetypes.find((a) => a.name === data.subclass) ?? null
+      const next = applyRules(data, { cls: rc, archetype, race: null, level })
+      setData(next)
+      setDirty(true)
+      setSavedAt(false)
+      setRulesMsg(
+        `Preenchido das regras: ${rc.name}${archetype ? ` (${archetype.name})` : ''}.`,
+      )
+    },
+    [data, level],
+  )
+
+  // Carrega a classe das regras (do nosso banco) quando a classe muda.
+  // Na criacao, ja preenche sozinho se a ficha ainda nao tem bloco automatico.
+  useEffect(() => {
+    const en = CLASS_PT_TO_EN[charClass]
+    if (!en) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRuleClass(null)
+      return
+    }
+    let active = true
+    getRuleClassByName(en)
+      .then((rc) => {
+        if (!active) return
+        setRuleClass(rc)
+        if (rc && !data.featuresAndTraits.includes(AUTO_MARK)) {
+          const archetype = rc.archetypes.find((a) => a.name === data.subclass) ?? null
+          setData(applyRules(data, { cls: rc, archetype, race: null, level }))
+          setDirty(true)
+          setRulesMsg(`Preenchido das regras: ${rc.name}.`)
+        }
+      })
+      .catch(() => active && setRuleClass(null))
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [charClass])
 
   // Wrappers para campos do topo que tambem marcam dirty.
   function bind<T>(setter: (v: T) => void) {
@@ -167,6 +216,24 @@ export function CharacterEditor() {
             />
             <NumberField label="Nível" value={level} onChange={bind(setLevel)} min={1} max={20} />
             <SelectField
+              label="Subclasse / Arquétipo"
+              value={data.subclass}
+              onChange={(v) => {
+                const archetype =
+                  ruleClass?.archetypes.find((a) => a.name === v) ?? null
+                const base = { ...data, subclass: v }
+                setData(
+                  ruleClass
+                    ? applyRules(base, { cls: ruleClass, archetype, race: null, level })
+                    : base,
+                )
+                setDirty(true)
+                setSavedAt(false)
+              }}
+              options={ruleClass?.archetypes.map((a) => a.name) ?? []}
+              placeholder={ruleClass ? 'Selecione...' : 'Importe as regras primeiro'}
+            />
+            <SelectField
               label="Alinhamento"
               value={data.alignment}
               onChange={(v) => patch({ alignment: v })}
@@ -194,6 +261,22 @@ export function CharacterEditor() {
               onChange={bind(setAvatarUrl)}
               placeholder="https://..."
             />
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              disabled={!ruleClass}
+              onClick={() => ruleClass && aplicarRegras(ruleClass)}
+              className="rounded-lg border border-gold/40 px-4 py-2 text-sm text-gold-light transition hover:bg-gold/10 disabled:opacity-40"
+            >
+              ↻ Preencher das regras
+            </button>
+            {rulesMsg && <span className="text-xs text-emerald-300/80">{rulesMsg}</span>}
+            {!ruleClass && charClass && (
+              <span className="text-xs text-parchment/50">
+                Classe não encontrada nas regras. Importe em "Regras".
+              </span>
+            )}
           </div>
         </SectionCard>
 

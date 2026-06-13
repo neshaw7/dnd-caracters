@@ -79,7 +79,10 @@ export function CharacterSheet() {
         <header className="sheet-avoid-break mb-5 border-b-2 border-[#b8995a] pb-4">
           <h1 className="sheet-title text-4xl font-bold">{row.name}</h1>
           <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            <HeaderField label="Classe e Nível" value={`${row.char_class ?? '—'} ${row.level}`} />
+            <HeaderField
+              label="Classe e Nível"
+              value={`${row.char_class ?? '—'} ${row.level}${d.subclass ? ` · ${d.subclass}` : ''}`}
+            />
             <HeaderField label="Raça" value={row.race ?? '—'} />
             <HeaderField label="Antecedente" value={d.background || '—'} />
             <HeaderField label="Alinhamento" value={d.alignment || '—'} />

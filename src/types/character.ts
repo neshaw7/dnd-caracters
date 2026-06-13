@@ -80,6 +80,7 @@ export interface Spellcasting {
 // Ficha completa guardada na coluna JSONB "data".
 export interface CharacterData {
   // Identidade
+  subclass: string // subclasse / arquétipo (ex: Arcane Trickster)
   background: string // antecedente
   alignment: string // alinhamento
   playerName: string // nome do jogador
@@ -122,6 +123,7 @@ export interface CharacterData {
 // Ficha vazia padrao para um novo personagem.
 export function emptyCharacterData(): CharacterData {
   return {
+    subclass: '',
     background: '',
     alignment: '',
     playerName: '',

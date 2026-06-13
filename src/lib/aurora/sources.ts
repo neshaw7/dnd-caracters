@@ -15,7 +15,7 @@ export interface AuroraIndexSource {
 // Indices que o importador pode baixar. O "core" puxa a PHB (12 classes +
 // 9 racas base, regras 2014). Os demais sao opcionais.
 export const AURORA_INDEXES: AuroraIndexSource[] = [
-  { key: 'core', label: 'Núcleo (PHB 2014, classes e raças base)', url: `${AURORA_BASE}/core.index` },
+  { key: 'core', label: 'Núcleo (PHB 2014, classes e raças base)', url: `${AURORA_BASE}/core/players-handbook.index` },
   { key: 'supplements', label: 'Suplementos (Xanathar, Volo, Eberron...)', url: `${AURORA_BASE}/supplements.index` },
   { key: 'unearthed-arcana', label: 'Unearthed Arcana (playtest)', url: `${AURORA_BASE}/unearthed-arcana.index` },
 ]

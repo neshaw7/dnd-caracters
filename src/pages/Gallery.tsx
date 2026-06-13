@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import {
   listCharacters,
@@ -81,6 +81,12 @@ export function Gallery() {
           <p className="text-sm text-parchment/60">{user?.email}</p>
         </div>
         <div className="flex gap-3">
+          <Link
+            to="/regras"
+            className="rounded-lg border border-gold/30 px-4 py-2 text-sm text-parchment/80 transition hover:border-gold/60 hover:text-parchment"
+          >
+            Regras
+          </Link>
           <button
             type="button"
             onClick={() => setShowNew(true)}

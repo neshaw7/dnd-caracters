@@ -3,6 +3,7 @@ import { Login } from './pages/Login'
 import { Gallery } from './pages/Gallery'
 import { CharacterEditor } from './pages/CharacterEditor'
 import { CharacterSheet } from './pages/CharacterSheet'
+import { Rules } from './pages/Rules'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
@@ -30,6 +31,14 @@ function App() {
         element={
           <ProtectedRoute>
             <CharacterEditor />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/regras"
+        element={
+          <ProtectedRoute>
+            <Rules />
           </ProtectedRoute>
         }
       />
