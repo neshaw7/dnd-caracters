@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+/* Tema fantasia: paleta escura com dourado/pergaminho */
+@theme {
+  --color-parchment: #f4e9d0;
+  --color-ink: #2b2118;
+  --color-gold: #c8a24a;
+  --color-gold-light: #e6c878;
+  --color-wine: #6b1f2a;
+  --color-night: #15110d;
+  --color-night-soft: #1f1812;
+
+  --font-display: 'Cinzel', ui-serif, Georgia, serif;
+  --font-body: 'EB Garamond', ui-serif, Georgia, serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-night);
+    color: var(--color-parchment);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+}
