@@ -8,4 +8,12 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/dnd-caracters/' : '/',
   plugins: [react(), tailwindcss()],
+  // Garante uma unica instancia do React (evita "Invalid hook call").
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
+  // Pre-empacota as deps no boot, evitando re-otimizacao e reload no meio da sessao.
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],
+  },
 })
