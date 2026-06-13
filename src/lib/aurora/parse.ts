@@ -1,26 +1,37 @@
 // Parser do formato XML do Aurora Builder.
-// Extrai os campos mecanicos confiaveis de classes e racas. O texto descritivo
-// completo pode vir depois; aqui focamos no que da pra mapear com seguranca.
+// Extrai classes (com subclasses), racas, caracteristicas (com texto) e a
+// conjuracao de subclasses. Foca nos campos que dao pra mapear com seguranca.
 
 import type { AbilityKey, SkillKey } from '../../domain/dnd'
 
-export interface ParsedFeatureRow {
+export interface ParsedFeature {
+  id: string
   level: number
-  names: string[]
+  name: string
+  text: string
+}
+
+export interface ParsedArchetype {
+  id: string
+  name: string
+  source: string
+  spellcastingAbility: AbilityKey | null
+  features: ParsedFeature[]
 }
 
 export interface ParsedClass {
   id: string
   name: string
   source: string
-  hitDie: number // ex: 12
+  hitDie: number
   savingThrows: AbilityKey[]
   armor: string[]
   weapons: string[]
   tools: string[]
   skillChoose: number
   skillOptions: SkillKey[]
-  featuresByLevel: ParsedFeatureRow[]
+  features: ParsedFeature[]
+  archetypes: ParsedArchetype[]
 }
 
 export interface ParsedRace {
@@ -50,6 +61,15 @@ const STAT_TO_ABILITY: Record<string, AbilityKey> = {
   charisma: 'cha',
 }
 
+const ABILITY_NAME_TO_KEY: Record<string, AbilityKey> = {
+  strength: 'str',
+  dexterity: 'dex',
+  constitution: 'con',
+  intelligence: 'int',
+  wisdom: 'wis',
+  charisma: 'cha',
+}
+
 const SAVE_ID_TO_ABILITY: Record<string, AbilityKey> = {
   ID_PROFICIENCY_SAVINGTHROW_STRENGTH: 'str',
   ID_PROFICIENCY_SAVINGTHROW_DEXTERITY: 'dex',
@@ -71,7 +91,6 @@ const WEAPON_ID_TO_LABEL: Record<string, string> = {
   ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS: 'Armas marciais',
 }
 
-// Nomes das pericias em ingles (como vem no texto) -> nossas chaves.
 const SKILL_EN_TO_KEY: Record<string, SkillKey> = {
   acrobatics: 'acrobacia',
   'animal handling': 'lidarComAnimais',
@@ -93,7 +112,6 @@ const SKILL_EN_TO_KEY: Record<string, SkillKey> = {
   survival: 'sobrevivencia',
 }
 
-// Idiomas (ID -> nome PT) para os mais comuns; o resto cai no fallback.
 const LANGUAGE_ID_TO_PT: Record<string, string> = {
   ID_LANGUAGE_COMMON: 'Comum',
   ID_LANGUAGE_DWARVISH: 'Anão',
@@ -115,25 +133,83 @@ const LANGUAGE_ID_TO_PT: Record<string, string> = {
 
 function languageName(id: string): string {
   if (LANGUAGE_ID_TO_PT[id]) return LANGUAGE_ID_TO_PT[id]
-  // Fallback: ID_LANGUAGE_FOO -> "Foo"
   const raw = id.replace(/^ID_LANGUAGE_/, '').replace(/_/g, ' ').toLowerCase()
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
 
-// ----------------------------- parser -----------------------------
+// ----------------------------- helpers -----------------------------
 
 function parseXml(xml: string): Document {
   return new DOMParser().parseFromString(xml, 'application/xml')
 }
 
+function collapse(s: string): string {
+  return s.replace(/\s+/g, ' ').trim()
+}
+
+// Texto de uma feature: prefere o <sheet><description> (resumido), senao o
+// <description> completo.
+function featureText(el: Element): string {
+  const sheetDesc = el.querySelector('sheet > description')
+  if (sheetDesc?.textContent) return collapse(sheetDesc.textContent)
+  const desc = el.querySelector('description')
+  return collapse(desc?.textContent ?? '')
+}
+
+// Detecta o atributo de conjuracao dentro de uma feature (<spellcasting ability="..">).
+function spellcastingAbilityOf(el: Element): AbilityKey | null {
+  const sc = el.querySelector('spellcasting')
+  const ability = (sc?.getAttribute('ability') ?? '').toLowerCase()
+  return ABILITY_NAME_TO_KEY[ability] ?? null
+}
+
+// ----------------------------- parser -----------------------------
+
 function parseHitDie(el: Element): number {
   const set = el.querySelector('setters > set[name="hd"]')
-  const txt = set?.textContent?.trim() ?? '' // ex: "d12"
-  const n = parseInt(txt.replace(/[^0-9]/g, ''), 10)
+  const n = parseInt((set?.textContent ?? '').replace(/[^0-9]/g, ''), 10)
   return Number.isNaN(n) ? 0 : n
 }
 
-function parseClass(el: Element): ParsedClass {
+function parseSkillOptions(descText: string): SkillKey[] {
+  const m = descText.match(/Choose\s+\w+\s+from\s+([^.]+)/i)
+  if (!m) return []
+  const found: SkillKey[] = []
+  const chunk = m[1].toLowerCase()
+  for (const [en, key] of Object.entries(SKILL_EN_TO_KEY)) {
+    if (chunk.includes(en) && !found.includes(key)) found.push(key)
+  }
+  return found
+}
+
+// Resolve uma lista de grants (id+level) usando o mapa de features (id -> nome/texto).
+function resolveFeatures(
+  grants: { id: string; level: number }[],
+  featureMap: Map<string, { name: string; text: string }>,
+): ParsedFeature[] {
+  return grants
+    .map((g) => {
+      const f = featureMap.get(g.id)
+      return f ? { id: g.id, level: g.level, name: f.name, text: f.text } : null
+    })
+    .filter((f): f is ParsedFeature => f !== null)
+    .sort((a, b) => a.level - b.level)
+}
+
+function grantsOf(el: Element, grantType: string): { id: string; level: number }[] {
+  const rules = el.querySelector('rules')
+  if (!rules) return []
+  return Array.from(rules.querySelectorAll(`grant[type="${grantType}"]`)).map((g) => ({
+    id: g.getAttribute('id') ?? '',
+    level: parseInt(g.getAttribute('level') ?? '1', 10) || 1,
+  }))
+}
+
+function parseClass(
+  el: Element,
+  featureMap: Map<string, { name: string; text: string }>,
+  archetypes: ParsedArchetype[],
+): ParsedClass {
   const rules = el.querySelector('rules')
   const savingThrows: AbilityKey[] = []
   const armor: string[] = []
@@ -148,19 +224,17 @@ function parseClass(el: Element): ParsedClass {
       else if (ARMOR_ID_TO_LABEL[id]) armor.push(ARMOR_ID_TO_LABEL[id])
       else if (WEAPON_ID_TO_LABEL[id]) weapons.push(WEAPON_ID_TO_LABEL[id])
     })
-    // Numero de pericias: <select type="Proficiency" ... number="2">
     rules.querySelectorAll('select[type="Proficiency"]').forEach((s) => {
       const supports = (s.getAttribute('supports') ?? '').toLowerCase()
       const name = (s.getAttribute('name') ?? '').toLowerCase()
-      if (supports.includes('skill') || name.includes('skill')) {
-        skillChoose = parseInt(s.getAttribute('number') ?? '0', 10) || 0
+      const num = parseInt(s.getAttribute('number') ?? '0', 10) || 0
+      if ((supports.includes('skill') || name.includes('skill')) && num > skillChoose) {
+        skillChoose = num
       }
     })
   }
 
-  // Opcoes de pericia: parse do texto "Choose two from X, Y, and Z".
   const descText = el.querySelector('description')?.textContent ?? ''
-  const skillOptions = parseSkillOptions(descText)
 
   return {
     id: el.getAttribute('id') ?? '',
@@ -172,42 +246,52 @@ function parseClass(el: Element): ParsedClass {
     weapons,
     tools,
     skillChoose,
-    skillOptions,
-    featuresByLevel: parseFeatureTable(el),
+    skillOptions: parseSkillOptions(descText),
+    features: resolveFeatures(grantsOf(el, 'Class Feature'), featureMap),
+    archetypes,
   }
 }
 
-function parseSkillOptions(descText: string): SkillKey[] {
-  // Procura "Skills: Choose ... from <lista>" ou "Choose ... from <lista>".
-  const m = descText.match(/Choose\s+\w+\s+from\s+([^.]+)/i)
-  if (!m) return []
-  const found: SkillKey[] = []
-  const chunk = m[1].toLowerCase()
-  for (const [en, key] of Object.entries(SKILL_EN_TO_KEY)) {
-    if (chunk.includes(en) && !found.includes(key)) found.push(key)
+function parseArchetype(
+  el: Element,
+  featureMap: Map<string, { name: string; text: string }>,
+  spellcastingByFeatureId: Map<string, AbilityKey>,
+): ParsedArchetype {
+  const grants = grantsOf(el, 'Archetype Feature')
+  let spellcastingAbility: AbilityKey | null = null
+  for (const g of grants) {
+    if (spellcastingByFeatureId.has(g.id)) {
+      spellcastingAbility = spellcastingByFeatureId.get(g.id)!
+      break
+    }
   }
-  return found
+  return {
+    id: el.getAttribute('id') ?? '',
+    name: el.getAttribute('name') ?? '',
+    source: el.getAttribute('source') ?? '',
+    spellcastingAbility,
+    features: resolveFeatures(grants, featureMap),
+  }
 }
 
-function parseFeatureTable(el: Element): ParsedFeatureRow[] {
-  // A tabela class-features tem linhas com nivel e a coluna de features (.left).
-  const rows: ParsedFeatureRow[] = []
-  const table = el.querySelector('table.class-features')
-  if (!table) return rows
-  table.querySelectorAll('tr').forEach((tr) => {
-    const cells = tr.querySelectorAll('td')
-    if (cells.length < 2) return
-    const levelTxt = cells[0].textContent?.trim() ?? ''
-    const level = parseInt(levelTxt.replace(/[^0-9]/g, ''), 10)
-    if (Number.isNaN(level)) return // pula o cabecalho
-    const featureCell = tr.querySelector('td.left')
-    const names = (featureCell?.textContent ?? '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s && s !== '—' && !/^Path feature$/i.test(s))
-    if (names.length) rows.push({ level, names })
+function parseRaceTraits(el: Element): { name: string; text: string }[] {
+  const traits: { name: string; text: string }[] = []
+  el.querySelectorAll('description span.feature').forEach((span) => {
+    const rawName = (span.textContent ?? '').trim()
+    if (rawName.endsWith(':')) return
+    const name = rawName.replace(/\.\s*$/, '').trim()
+    let text = ''
+    let node = span.nextSibling
+    while (
+      node &&
+      !(node.nodeType === 1 && (node as Element).tagName.toLowerCase() === 'br')
+    ) {
+      text += node.textContent ?? ''
+      node = node.nextSibling
+    }
+    if (name) traits.push({ name, text: collapse(text) })
   })
-  return rows
+  return traits
 }
 
 function parseRace(el: Element): ParsedRace {
@@ -234,9 +318,7 @@ function parseRace(el: Element): ParsedRace {
     })
     const sizeGrant = rules.querySelector('grant[type="Size"]')
     if (sizeGrant) {
-      size = (sizeGrant.getAttribute('id') ?? '')
-        .replace(/^ID_SIZE_/, '')
-        .toLowerCase()
+      size = (sizeGrant.getAttribute('id') ?? '').replace(/^ID_SIZE_/, '').toLowerCase()
     }
   }
 
@@ -252,39 +334,38 @@ function parseRace(el: Element): ParsedRace {
   }
 }
 
-function parseRaceTraits(el: Element): { name: string; text: string }[] {
-  // Tracos no formato <span class="feature">Nome.</span>texto<br/>
-  const traits: { name: string; text: string }[] = []
-  el.querySelectorAll('description span.feature').forEach((span) => {
-    const rawName = (span.textContent ?? '').trim()
-    // Ignora listas de nomes ("Calishite Names:", etc.) e flavor: tracos
-    // reais terminam com ponto, nao com dois-pontos.
-    if (rawName.endsWith(':')) return
-    const name = rawName.replace(/\.\s*$/, '').trim()
-    // Texto = irmaos ate o proximo <br>
-    let text = ''
-    let node = span.nextSibling
-    while (
-      node &&
-      !(node.nodeType === 1 && (node as Element).tagName.toLowerCase() === 'br')
-    ) {
-      text += node.textContent ?? ''
-      node = node.nextSibling
-    }
-    if (name) traits.push({ name, text: text.trim() })
-  })
-  return traits
-}
-
-// Parseia um arquivo XML inteiro, retornando todas as classes e racas nele.
+// Parseia um arquivo XML inteiro (classe + subclasses + features, ou racas).
 export function parseAuroraFile(xml: string): ParsedFile {
   const doc = parseXml(xml)
-  const classes: ParsedClass[] = []
-  const races: ParsedRace[] = []
 
-  doc.querySelectorAll('element[type="Class"]').forEach((el) => {
-    classes.push(parseClass(el))
+  // Mapa de features (Class Feature + Archetype Feature) id -> {nome, texto}
+  // e mapa de conjuracao por feature.
+  const featureMap = new Map<string, { name: string; text: string }>()
+  const spellcastingByFeatureId = new Map<string, AbilityKey>()
+  doc
+    .querySelectorAll('element[type="Class Feature"], element[type="Archetype Feature"]')
+    .forEach((el) => {
+      const id = el.getAttribute('id') ?? ''
+      if (!id) return
+      featureMap.set(id, { name: el.getAttribute('name') ?? '', text: featureText(el) })
+      const ability = spellcastingAbilityOf(el)
+      if (ability) spellcastingByFeatureId.set(id, ability)
+    })
+
+  // Arquetipos (subclasses) do arquivo.
+  const archetypes: ParsedArchetype[] = []
+  doc.querySelectorAll('element[type="Archetype"]').forEach((el) => {
+    archetypes.push(parseArchetype(el, featureMap, spellcastingByFeatureId))
   })
+
+  // Classes (associa todos os arquetipos do arquivo a classe, ja que cada
+  // arquivo de classe contem so uma classe + suas subclasses).
+  const classes: ParsedClass[] = []
+  doc.querySelectorAll('element[type="Class"]').forEach((el) => {
+    classes.push(parseClass(el, featureMap, archetypes))
+  })
+
+  const races: ParsedRace[] = []
   doc.querySelectorAll('element[type="Race"]').forEach((el) => {
     races.push(parseRace(el))
   })
