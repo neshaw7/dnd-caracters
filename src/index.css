@@ -29,3 +29,67 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+/* ----------------------------------------------------------------
+   Ficha em estilo "papel" (a mesma aparencia na tela e na impressao)
+   ---------------------------------------------------------------- */
+.sheet-paper {
+  background:
+    radial-gradient(circle at top left, #fbf4e2, #f1e4c6);
+  color: #2b2118;
+  font-family: var(--font-body);
+}
+
+.sheet-box {
+  border: 1.5px solid #b8995a;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.sheet-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b5a33;
+}
+
+.sheet-title {
+  font-family: var(--font-display);
+  color: #2b2118;
+}
+
+/* ----------------------------------------------------------------
+   Impressao: mostra apenas a ficha, em papel branco.
+   ---------------------------------------------------------------- */
+@media print {
+  @page {
+    margin: 10mm;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .sheet-paper {
+    background: #fff !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  .sheet-box {
+    background: #fff !important;
+  }
+
+  /* Evita cortar blocos no meio entre paginas. */
+  .sheet-avoid-break {
+    break-inside: avoid;
+  }
+}

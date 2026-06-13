@@ -35,3 +35,38 @@ Source** deve estar em **GitHub Actions**.
 
 Copie `.env.example` para `.env` e preencha com os dados do seu projeto Supabase.
 Nunca commite o `.env` (já está no `.gitignore`).
+
+Para o **deploy** no GitHub Pages funcionar com o Supabase, adicione as mesmas
+duas variáveis como **secrets** do repositório:
+**Settings > Secrets and variables > Actions > New repository secret**, com os
+nomes `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
+
+## Estrutura
+
+```
+src/
+  domain/dnd.ts          Constantes 5e (atributos, perícias, classes) e cálculos
+  types/character.ts     Modelo da ficha (CharacterData) e ficha vazia padrão
+  lib/
+    supabase.ts          Cliente Supabase
+    characters.ts        CRUD de personagens (listar, criar, ler, salvar, apagar)
+  auth/                  Provedor de autenticação (email/senha)
+  components/
+    form.tsx             Campos reutilizáveis (texto, número, select, área)
+    editor/              Blocos do editor (atributos, perícias, ataques, magias...)
+    CharacterCard.tsx    Card da galeria
+  pages/
+    Login.tsx            Entrar / criar conta
+    Gallery.tsx          Galeria de personagens (CRUD)
+    CharacterEditor.tsx  Editor completo da ficha 5e
+    CharacterSheet.tsx   Ficha em estilo papel + impressão (window.print)
+supabase/schema.sql      SQL do banco (tabela characters + RLS)
+```
+
+## Funcionalidades
+
+- Login por email/senha (Supabase Auth)
+- Galeria de personagens com criar, editar e apagar
+- Editor completo da ficha de D&D 5e com cálculos automáticos (modificadores,
+  bônus de proficiência, testes de resistência, perícias, CD de magia, etc.)
+- Visualização da ficha em estilo "papel" e impressão fiel num clique
