@@ -69,6 +69,7 @@ export interface Spell {
   level: number // 0 = truque (cantrip)
   name: string
   prepared: boolean
+  description: string // texto da magia (escrito a mão ou importado)
 }
 
 export interface Spellcasting {

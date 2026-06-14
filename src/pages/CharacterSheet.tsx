@@ -376,6 +376,40 @@ export function CharacterSheet() {
             )}
           </div>
         )}
+
+        {/* Descricoes das magias (paginas finais), agrupadas por nivel */}
+        {d.spellcasting.spells.some((s) => s.description?.trim()) && (
+          <div className="sheet-page-break mt-5">
+            <h2 className="sheet-title mb-3 text-lg font-semibold">
+              Descrições das Magias
+            </h2>
+            <div className="space-y-4">
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((lvl) => {
+                const spells = d.spellcasting.spells.filter(
+                  (s) => s.level === lvl && s.description?.trim(),
+                )
+                if (spells.length === 0) return null
+                return (
+                  <div key={lvl} className="sheet-avoid-break">
+                    <h3 className="sheet-label border-b border-[#b8995a]/40">
+                      {lvl === 0 ? 'Truques' : `${lvl}º Círculo`}
+                    </h3>
+                    <div className="mt-2 space-y-3">
+                      {spells.map((s) => (
+                        <div key={s.id} className="sheet-avoid-break">
+                          <h4 className="sheet-title font-semibold">{s.name}</h4>
+                          <p className="whitespace-pre-wrap text-sm leading-snug">
+                            {s.description}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

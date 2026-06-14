@@ -46,10 +46,16 @@ export function SpellcastingEditor({
   function addSpell(level: number) {
     onChange({
       ...spellcasting,
-      spells: [...spellcasting.spells, { id: uid(), level, name: '', prepared: false }],
+      spells: [
+        ...spellcasting.spells,
+        { id: uid(), level, name: '', prepared: false, description: '' },
+      ],
     })
   }
-  function updateSpell(id: string, patch: Partial<{ name: string; prepared: boolean }>) {
+  function updateSpell(
+    id: string,
+    patch: Partial<{ name: string; prepared: boolean; description: string }>,
+  ) {
     onChange({
       ...spellcasting,
       spells: spellcasting.spells.map((s) => (s.id === id ? { ...s, ...patch } : s)),
@@ -133,32 +139,41 @@ export function SpellcastingEditor({
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               {spellsHere.map((s) => (
-                <div key={s.id} className="flex items-center gap-2">
-                  {level > 0 && (
+                <div key={s.id} className="rounded-lg border border-gold/10 bg-night/40 p-2">
+                  <div className="flex items-center gap-2">
+                    {level > 0 && (
+                      <input
+                        type="checkbox"
+                        checked={s.prepared}
+                        onChange={(e) => updateSpell(s.id, { prepared: e.target.checked })}
+                        title="Preparada"
+                        className="h-4 w-4 accent-gold"
+                      />
+                    )}
                     <input
-                      type="checkbox"
-                      checked={s.prepared}
-                      onChange={(e) => updateSpell(s.id, { prepared: e.target.checked })}
-                      title="Preparada"
-                      className="h-4 w-4 accent-gold"
+                      className="flex-1 rounded-lg border border-gold/20 bg-night-soft px-2 py-1 text-sm text-parchment outline-none focus:border-gold/60"
+                      value={s.name}
+                      placeholder="Nome da magia"
+                      onChange={(e) => updateSpell(s.id, { name: e.target.value })}
                     />
-                  )}
-                  <input
-                    className="flex-1 rounded-lg border border-gold/20 bg-night-soft px-2 py-1 text-sm text-parchment outline-none focus:border-gold/60"
-                    value={s.name}
-                    placeholder="Nome da magia"
-                    onChange={(e) => updateSpell(s.id, { name: e.target.value })}
+                    <button
+                      type="button"
+                      onClick={() => removeSpell(s.id)}
+                      className="px-2 text-red-300/70 transition hover:text-red-200"
+                      title="Remover"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <textarea
+                    className="mt-1.5 w-full resize-y rounded-lg border border-gold/15 bg-night-soft px-2 py-1 text-xs text-parchment/90 outline-none focus:border-gold/60"
+                    rows={2}
+                    value={s.description ?? ''}
+                    placeholder="Descrição da magia (opcional) — aparece na impressão"
+                    onChange={(e) => updateSpell(s.id, { description: e.target.value })}
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeSpell(s.id)}
-                    className="px-2 text-red-300/70 transition hover:text-red-200"
-                    title="Remover"
-                  >
-                    ×
-                  </button>
                 </div>
               ))}
             </div>
