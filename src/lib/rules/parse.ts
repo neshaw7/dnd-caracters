@@ -62,7 +62,7 @@ export interface ParsedBackground {
   skills: SkillKey[] // pericias concedidas (fixas)
   languageChoices: number // quantos idiomas a escolher
   tools: string[] // proficiencias de ferramentas (rotulo livre)
-  feature: { name: string; text: string } | null
+  feature: { id: string; name: string; text: string } | null
 }
 
 export interface ParsedFile {
@@ -418,10 +418,14 @@ function toolLabel(id: string): string {
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
 
-function parseBackground(el: Element): ParsedBackground {
+function parseBackground(
+  el: Element,
+  featureMap: Map<string, { name: string; text: string }>,
+): ParsedBackground {
   const skills: SkillKey[] = []
   const tools: string[] = []
   let languageChoices = 0
+  let feature: ParsedBackground['feature'] = null
   const rules = el.querySelector('rules')
   if (rules) {
     rules.querySelectorAll('grant[type="Proficiency"]').forEach((g) => {
@@ -432,6 +436,13 @@ function parseBackground(el: Element): ParsedBackground {
     rules.querySelectorAll('select[type="Language"]').forEach((s) => {
       languageChoices += parseInt(s.getAttribute('number') ?? '1', 10) || 1
     })
+    // Caracteristica do antecedente (ex: "Criminal Contact").
+    const fg = rules.querySelector('grant[type="Background Feature"]')
+    const fid = fg?.getAttribute('id') ?? ''
+    const f = fid ? featureMap.get(fid) : undefined
+    if (fid && f) {
+      feature = { id: fid, name: f.name.replace(/^Feature:\s*/i, ''), text: f.text }
+    }
   }
   return {
     id: el.getAttribute('id') ?? '',
@@ -440,7 +451,7 @@ function parseBackground(el: Element): ParsedBackground {
     skills,
     languageChoices,
     tools,
-    feature: null,
+    feature,
   }
 }
 
@@ -454,7 +465,9 @@ export function parseRulesXml(xml: string): ParsedFile {
   const spellcastingByFeatureId = new Map<string, AbilityKey>()
   const slotStatsByFeatureId = new Map<string, SlotStat[]>()
   doc
-    .querySelectorAll('element[type="Class Feature"], element[type="Archetype Feature"]')
+    .querySelectorAll(
+      'element[type="Class Feature"], element[type="Archetype Feature"], element[type="Background Feature"]',
+    )
     .forEach((el) => {
       const id = el.getAttribute('id') ?? ''
       if (!id) return
@@ -487,7 +500,7 @@ export function parseRulesXml(xml: string): ParsedFile {
 
   const backgrounds: ParsedBackground[] = []
   doc.querySelectorAll('element[type="Background"]').forEach((el) => {
-    backgrounds.push(parseBackground(el))
+    backgrounds.push(parseBackground(el, featureMap))
   })
 
   return { classes, races, backgrounds }

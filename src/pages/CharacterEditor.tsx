@@ -7,16 +7,17 @@ import {
   formatModifier,
   proficiencyBonus as calcProfBonus,
   toEnglishClass,
+  toEnglishBackground,
   type AbilityKey,
   type SkillKey,
 } from '../domain/dnd'
 import { getCharacter, updateCharacter } from '../lib/characters'
 import type { CharacterData } from '../types/character'
 import { emptyCharacterData } from '../types/character'
-import { getRuleClassByName } from '../lib/rules/rulesStore'
+import { getRuleClassByName, getRuleBackgroundByName } from '../lib/rules/rulesStore'
 import { applyRules } from '../lib/rules/autofill'
 import { useClassOptions } from '../lib/rules/useClassOptions'
-import type { ParsedClass } from '../lib/rules/parse'
+import type { ParsedClass, ParsedBackground } from '../lib/rules/parse'
 import {
   TextField,
   NumberField,
@@ -46,6 +47,7 @@ export function CharacterEditor() {
   const [avatarUrl, setAvatarUrl] = useState('')
   const [data, setData] = useState<CharacterData>(emptyCharacterData())
   const [ruleClass, setRuleClass] = useState<ParsedClass | null>(null)
+  const [ruleBackground, setRuleBackground] = useState<ParsedBackground | null>(null)
   const [rulesMsg, setRulesMsg] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(true)
@@ -88,7 +90,13 @@ export function CharacterEditor() {
   const aplicarRegras = useCallback(
     (rc: ParsedClass) => {
       const archetype = rc.archetypes.find((a) => a.name === data.subclass) ?? null
-      const next = applyRules(data, { cls: rc, archetype, race: null, level })
+      const next = applyRules(data, {
+        cls: rc,
+        archetype,
+        race: null,
+        background: ruleBackground,
+        level,
+      })
       setData(next)
       setDirty(true)
       setSavedAt(false)
@@ -96,8 +104,25 @@ export function CharacterEditor() {
         `Preenchido das regras: ${rc.name}${archetype ? ` (${archetype.name})` : ''}.`,
       )
     },
-    [data, level],
+    [data, level, ruleBackground],
   )
+
+  // Carrega o antecedente das regras quando o campo Antecedente muda.
+  useEffect(() => {
+    const en = data.background ? toEnglishBackground(data.background) : ''
+    if (!en) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRuleBackground(null)
+      return
+    }
+    let active = true
+    getRuleBackgroundByName(en)
+      .then((bg) => active && setRuleBackground(bg))
+      .catch(() => active && setRuleBackground(null))
+    return () => {
+      active = false
+    }
+  }, [data.background])
 
   // Carrega a classe das regras (do nosso banco) quando a classe muda.
   // Na criacao, ja preenche sozinho se a ficha ainda nao tem bloco automatico.
@@ -115,7 +140,7 @@ export function CharacterEditor() {
         setRuleClass(rc)
         if (rc && data.appliedFeatures.length === 0) {
           const archetype = rc.archetypes.find((a) => a.name === data.subclass) ?? null
-          setData(applyRules(data, { cls: rc, archetype, race: null, level }))
+          setData(applyRules(data, { cls: rc, archetype, race: null, background: ruleBackground, level }))
           setDirty(true)
           setRulesMsg(`Preenchido das regras: ${rc.name}.`)
         }

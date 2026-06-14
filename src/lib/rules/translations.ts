@@ -96,4 +96,10 @@ export const FEATURE_PT: Record<string, FeaturePt> = {
     name: 'Especialização em Ferramentas',
     text: 'No 6º nível, seu bônus de proficiência é dobrado em testes que usem ferramentas com as quais você é proficiente.',
   },
+
+  // ---------------- Antecedentes ----------------
+  ID_BACKGROUND_FEATURE_CRIMINAL_CONTACT: {
+    name: 'Contato Criminoso',
+    text: 'Você tem um contato confiável que serve de ligação com uma rede de outros criminosos. Você sabe como enviar e receber mensagens desse contato, mesmo a grandes distâncias: conhece mensageiros locais, mestres de caravana corruptos e marinheiros suspeitos que podem entregar suas mensagens.',
+  },
 }

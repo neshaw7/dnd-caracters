@@ -3,10 +3,17 @@ import {
   ABILITY_LABEL,
   SKILLS,
   toDisplayClass,
+  toDisplayBackground,
   type AbilityKey,
 } from '../../domain/dnd'
 import type { AppliedFeature, CharacterData } from '../../types/character'
-import type { ParsedClass, ParsedRace, ParsedArchetype, ParsedFeature } from './parse'
+import type {
+  ParsedClass,
+  ParsedRace,
+  ParsedArchetype,
+  ParsedBackground,
+  ParsedFeature,
+} from './parse'
 import { FEATURE_PT, SUBCLASS_PT } from './translations'
 
 // Marcador que separa o texto do usuario do conteudo gerado automaticamente.
@@ -44,12 +51,13 @@ export interface AutofillInput {
   cls: ParsedClass | null
   archetype: ParsedArchetype | null
   race: ParsedRace | null
+  background?: ParsedBackground | null
   level: number
 }
 
 // Aplica os dados das regras sobre a ficha atual.
 export function applyRules(data: CharacterData, input: AutofillInput): CharacterData {
-  const { cls, archetype, race, level } = input
+  const { cls, archetype, race, background, level } = input
   const next: CharacterData = structuredClone(data)
   const conMod = abilityModifier(next.abilities.con)
 
@@ -86,6 +94,15 @@ export function applyRules(data: CharacterData, input: AutofillInput): Character
         const t = translateFeature(f)
         features.push({ source: subLabel, level: f.level, name: t.name, text: t.text })
       })
+  }
+  if (background?.feature) {
+    const pt = FEATURE_PT[background.feature.id]
+    features.push({
+      source: toDisplayBackground(background.name),
+      level: 1,
+      name: pt?.name ?? background.feature.name,
+      text: pt?.text ?? background.feature.text,
+    })
   }
   next.appliedFeatures = features
   // Remove bloco automatico antigo que ficava no texto livre (versoes anteriores).

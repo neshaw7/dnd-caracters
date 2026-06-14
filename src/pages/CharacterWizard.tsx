@@ -242,7 +242,7 @@ export function CharacterWizard() {
     try {
       const archetype = cls.archetypes.find((a) => a.name === subclass) ?? null
       let next: CharacterData = { ...data, abilities: finalAbilities }
-      next = applyRules(next, { cls, archetype, race: ruleRace, level })
+      next = applyRules(next, { cls, archetype, race: ruleRace, background: bgData, level })
       next.abilities = finalAbilities
       next.skillProficiencies = proficientSkills
       next.skillExpertise = expertiseSkills
