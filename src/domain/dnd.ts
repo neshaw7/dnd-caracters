@@ -90,7 +90,7 @@ export const CLASSES = [
   'Patrulheiro',
 ] as const
 
-// Mapeia o nome PT da classe para o nome em ingles usado nas regras do Aurora.
+// Mapeia o nome PT da classe para o nome em ingles usado nas regras importadas.
 export const CLASS_PT_TO_EN: Record<string, string> = {
   'Bárbaro': 'Barbarian',
   'Bardo': 'Bard',

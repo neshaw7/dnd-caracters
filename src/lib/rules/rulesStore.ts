@@ -1,7 +1,7 @@
 import { supabase } from '../supabase'
 import type { ParsedClass, ParsedRace } from './parse'
 
-// Acesso as tabelas de regras (espelho do Aurora) no Supabase.
+// Acesso as tabelas de regras (espelho no nosso Supabase).
 // rules_files = XML cru (backup); rules_elements = parseado e pronto pra uso.
 
 export interface RuleElementRow {

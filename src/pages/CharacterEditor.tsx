@@ -14,9 +14,9 @@ import {
 import { getCharacter, updateCharacter } from '../lib/characters'
 import type { CharacterData } from '../types/character'
 import { emptyCharacterData } from '../types/character'
-import { getRuleClassByName } from '../lib/aurora/rulesStore'
-import { applyRules, AUTO_MARK } from '../lib/aurora/autofill'
-import type { ParsedClass } from '../lib/aurora/parse'
+import { getRuleClassByName } from '../lib/rules/rulesStore'
+import { applyRules, AUTO_MARK } from '../lib/rules/autofill'
+import type { ParsedClass } from '../lib/rules/parse'
 import {
   TextField,
   NumberField,

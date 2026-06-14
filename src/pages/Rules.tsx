@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AURORA_INDEXES } from '../lib/aurora/sources'
-import { importIndex, type ImportProgress } from '../lib/aurora/importer'
-import { countRuleElements } from '../lib/aurora/rulesStore'
+import { RULE_SOURCES } from '../lib/rules/sources'
+import { importIndex, type ImportProgress } from '../lib/rules/importer'
+import { countRuleElements } from '../lib/rules/rulesStore'
 
 export function Rules() {
   const [progress, setProgress] = useState<ImportProgress | null>(null)
@@ -44,7 +44,7 @@ export function Rules() {
     <div className="mx-auto max-w-3xl px-6 py-8">
       <header className="mb-6 flex items-center justify-between border-b border-gold/20 pb-4">
         <h1 className="font-display text-2xl font-bold text-gold-light">
-          Regras (Aurora)
+          Regras (D&amp;D 5e)
         </h1>
         <Link to="/" className="text-sm text-parchment/60 transition hover:text-gold-light">
           ← Galeria
@@ -52,9 +52,9 @@ export function Rules() {
       </header>
 
       <p className="text-parchment/70">
-        Importa as regras de D&amp;D 5e do repositório público do Aurora Builder
-        para o nosso banco. Depois de importar, o preenchimento automático de
-        classe/raça funciona mesmo se o repositório do Aurora sair do ar.
+        Importa as regras de D&amp;D 5e (classes, subclasses e raças) para o
+        nosso banco. Depois de importar, o preenchimento automático de
+        classe/raça fica salvo aqui e funciona de forma independente.
       </p>
 
       {counts && (
@@ -65,7 +65,7 @@ export function Rules() {
       )}
 
       <div className="mt-6 space-y-3">
-        {AURORA_INDEXES.map((src) => (
+        {RULE_SOURCES.map((src) => (
           <div
             key={src.key}
             className="flex items-center justify-between rounded-xl border border-gold/20 bg-night-soft p-4"

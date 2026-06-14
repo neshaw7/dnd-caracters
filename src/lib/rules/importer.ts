@@ -1,5 +1,5 @@
-import { AURORA_BASE } from './sources'
-import { parseAuroraFile } from './parse'
+import { RULES_REPO_BASE } from './sources'
+import { parseRulesXml } from './parse'
 import { saveRulesFile, saveRuleElement } from './rulesStore'
 
 export interface ImportProgress {
@@ -49,7 +49,7 @@ async function resolveIndex(
 }
 
 function pathFromUrl(url: string): string {
-  return url.startsWith(AURORA_BASE) ? url.slice(AURORA_BASE.length + 1) : url
+  return url.startsWith(RULES_REPO_BASE) ? url.slice(RULES_REPO_BASE.length + 1) : url
 }
 
 // Importa um indice inteiro: baixa todos os XML, salva o cru e o parseado.
@@ -77,7 +77,7 @@ export async function importIndex(indexUrl: string, onProgress: OnProgress): Pro
         const res = await fetch(url)
         if (!res.ok) continue
         const content = await res.text()
-        const parsed = parseAuroraFile(content)
+        const parsed = parseRulesXml(content)
 
         // Salva o cru so de arquivos que tem conteudo util (classe/raca),
         // pra nao encher o banco com itens/monstros que nao usamos ainda.

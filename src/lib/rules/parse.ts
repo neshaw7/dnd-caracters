@@ -1,4 +1,4 @@
-// Parser do formato XML do Aurora Builder.
+// Parser do formato XML das regras de D&D 5e.
 // Extrai classes (com subclasses), racas, caracteristicas (com texto) e a
 // conjuracao de subclasses. Foca nos campos que dao pra mapear com seguranca.
 
@@ -147,7 +147,7 @@ function collapse(s: string): string {
   return s.replace(/\s+/g, ' ').trim()
 }
 
-// Remove variaveis de template do Aurora ({{...}}) que nao temos como resolver.
+// Remove variaveis de template ({{...}}) que nao temos como resolver.
 function stripTemplateVars(s: string): string {
   return s.replace(/\{\{[^}]*\}\}/g, '').replace(/\s+/g, ' ').trim()
 }
@@ -345,7 +345,7 @@ function parseRace(el: Element): ParsedRace {
 }
 
 // Parseia um arquivo XML inteiro (classe + subclasses + features, ou racas).
-export function parseAuroraFile(xml: string): ParsedFile {
+export function parseRulesXml(xml: string): ParsedFile {
   const doc = parseXml(xml)
 
   // Mapa de features (Class Feature + Archetype Feature) id -> {nome, texto}
