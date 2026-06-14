@@ -19,15 +19,10 @@ import { FEATURE_PT, SUBCLASS_PT } from './translations'
 // Marcador que separa o texto do usuario do conteudo gerado automaticamente.
 export const AUTO_MARK = '——— preenchido automaticamente das regras (não editar abaixo) ———'
 
+// Remove qualquer bloco automatico antigo (versoes anteriores marcavam com AUTO_MARK).
 function stripAuto(text: string): string {
   const i = text.indexOf(AUTO_MARK)
   return i === -1 ? text : text.slice(0, i).trimEnd()
-}
-
-function withAuto(userText: string, generated: string): string {
-  const base = stripAuto(userText).trim()
-  const block = `${AUTO_MARK}\n${generated.trim()}`
-  return base ? `${base}\n\n${block}` : block
 }
 
 // PV maximo sugerido: 1o nivel cheio + media nos demais, somando o mod de CON.
@@ -123,7 +118,7 @@ export function applyRules(data: CharacterData, input: AutofillInput): Character
     }))
   }
 
-  // --- Bloco de proficiencias e idiomas (texto) ---
+  // --- Bloco de proficiencias e idiomas (texto gerado, sem marcador) ---
   const profLines: string[] = []
   if (cls) {
     if (cls.armor.length) profLines.push(`Armaduras: ${cls.armor.join(', ')}`)
@@ -132,8 +127,11 @@ export function applyRules(data: CharacterData, input: AutofillInput): Character
       const opts = cls.skillOptions
         .map((k) => SKILLS.find((s) => s.key === k)?.label ?? k)
         .join(', ')
-      profLines.push(`Perícias: escolha ${cls.skillChoose} entre: ${opts}`)
+      profLines.push(`Perícias da classe: escolha ${cls.skillChoose} entre: ${opts}`)
     }
+  }
+  if (background?.tools.length) {
+    profLines.push(`Ferramentas: ${background.tools.join(', ')}`)
   }
   if (race) {
     if (race.languages.length) profLines.push(`Idiomas: ${race.languages.join(', ')}`)
@@ -143,7 +141,7 @@ export function applyRules(data: CharacterData, input: AutofillInput): Character
     if (bonuses) profLines.push(`Bônus racial de atributo: ${bonuses}`)
   }
   if (profLines.length) {
-    next.otherProficiencies = withAuto(next.otherProficiencies, profLines.join('\n'))
+    next.otherProficiencies = profLines.join('\n')
   }
 
   return next

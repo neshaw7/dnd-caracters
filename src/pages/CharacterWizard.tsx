@@ -257,12 +257,11 @@ export function CharacterWizard() {
           `Idiomas: ${langLine}`,
         )
       }
-      // Ferramentas (antecedente) e especializacao em ferramentas: acima do bloco.
-      const extras: string[] = []
-      if (bgData?.tools.length) extras.push(`Ferramentas: ${bgData.tools.join(', ')}`)
-      if (expertiseTools) extras.push('Especialização: Ferramentas de ladrão')
-      if (extras.length) {
-        next.otherProficiencies = `${extras.join('\n')}\n\n${next.otherProficiencies}`
+      // Especializacao em ferramentas de ladrao (as ferramentas do antecedente
+      // ja entram pelo applyRules).
+      if (expertiseTools) {
+        next.otherProficiencies =
+          `${next.otherProficiencies}\nEspecialização: Ferramentas de ladrão`.trim()
       }
 
       await updateCharacter(id, {

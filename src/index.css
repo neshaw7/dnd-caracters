@@ -64,7 +64,7 @@
    ---------------------------------------------------------------- */
 @media print {
   @page {
-    margin: 10mm;
+    margin: 8mm;
   }
 
   body {
@@ -82,14 +82,54 @@
     margin: 0 !important;
     max-width: none !important;
     width: 100% !important;
+    padding: 0 !important;
+    font-size: 9.5px !important;
+    line-height: 1.25 !important;
   }
 
   .sheet-box {
     background: #fff !important;
+    padding: 4px 6px !important;
+    border-radius: 4px !important;
   }
 
   /* Evita cortar blocos no meio entre paginas. */
   .sheet-avoid-break {
     break-inside: avoid;
+  }
+
+  /* Forca layout em colunas na impressao (independente da largura da pagina). */
+  .sheet-grid-3 {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+  .sheet-grid-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  /* Titulos e espacos menores na impressao. */
+  .sheet-paper h1 {
+    font-size: 20px !important;
+  }
+  .sheet-paper h2 {
+    font-size: 12px !important;
+  }
+  .sheet-paper h3 {
+    font-size: 10.5px !important;
+  }
+  .sheet-paper .text-2xl {
+    font-size: 15px !important;
+  }
+  .sheet-paper .space-y-4 > * + * {
+    margin-top: 5px !important;
+  }
+  .sheet-paper .mt-5 {
+    margin-top: 6px !important;
+  }
+  .sheet-paper .p-4 {
+    padding: 5px !important;
   }
 }

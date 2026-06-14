@@ -91,7 +91,7 @@ export function CharacterSheet() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="sheet-grid-3 grid grid-cols-1 gap-5 lg:grid-cols-3">
           {/* Coluna 1: atributos, resistencias, pericias */}
           <div className="space-y-4">
             <div className="sheet-avoid-break grid grid-cols-3 gap-2 lg:grid-cols-2">
@@ -273,7 +273,7 @@ export function CharacterSheet() {
             <h2 className="sheet-title mb-2 text-lg font-semibold">
               Características de Classe
             </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="sheet-grid-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {d.appliedFeatures.map((f, i) => (
                 <div key={i} className="sheet-box sheet-avoid-break p-3">
                   <div className="mb-1 flex items-baseline justify-between gap-2">
@@ -330,7 +330,7 @@ export function CharacterSheet() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sheet-grid-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((lvl) => {
                 const spells = d.spellcasting.spells.filter((s) => s.level === lvl)
                 const slot = d.spellcasting.slots[lvl]
