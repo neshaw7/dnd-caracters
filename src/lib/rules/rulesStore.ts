@@ -1,16 +1,18 @@
 import { supabase } from '../supabase'
-import type { ParsedClass, ParsedRace } from './parse'
+import type { ParsedClass, ParsedRace, ParsedBackground } from './parse'
 
 // Acesso as tabelas de regras (espelho no nosso Supabase).
 // rules_files = XML cru (backup); rules_elements = parseado e pronto pra uso.
 
+export type RuleKind = 'class' | 'race' | 'background'
+
 export interface RuleElementRow {
   id: string
-  kind: 'class' | 'race'
+  kind: RuleKind
   name: string
   name_pt: string | null
   source: string | null
-  data: ParsedClass | ParsedRace
+  data: ParsedClass | ParsedRace | ParsedBackground
 }
 
 export async function saveRulesFile(file: {
@@ -34,10 +36,10 @@ export async function saveRulesFile(file: {
 
 export async function saveRuleElement(el: {
   id: string
-  kind: 'class' | 'race'
+  kind: RuleKind
   name: string
   source?: string
-  data: ParsedClass | ParsedRace
+  data: ParsedClass | ParsedRace | ParsedBackground
 }): Promise<void> {
   const { error } = await supabase.from('rules_elements').upsert(
     {
@@ -104,4 +106,28 @@ export async function listRuleRaces(): Promise<{ id: string; name: string }[]> {
     .order('name')
   if (error) throw error
   return data ?? []
+}
+
+export async function listRuleBackgrounds(): Promise<{ id: string; name: string }[]> {
+  const { data, error } = await supabase
+    .from('rules_elements')
+    .select('id, name')
+    .eq('kind', 'background')
+    .order('name')
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getRuleBackgroundByName(
+  name: string,
+): Promise<ParsedBackground | null> {
+  const { data, error } = await supabase
+    .from('rules_elements')
+    .select('data')
+    .eq('kind', 'background')
+    .eq('name', name)
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return (data?.data as ParsedBackground) ?? null
 }

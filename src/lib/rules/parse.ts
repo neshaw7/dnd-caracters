@@ -55,9 +55,20 @@ export interface ParsedRace {
   traits: { name: string; text: string }[]
 }
 
+export interface ParsedBackground {
+  id: string
+  name: string
+  source: string
+  skills: SkillKey[] // pericias concedidas (fixas)
+  languageChoices: number // quantos idiomas a escolher
+  tools: string[] // proficiencias de ferramentas (rotulo livre)
+  feature: { name: string; text: string } | null
+}
+
 export interface ParsedFile {
   classes: ParsedClass[]
   races: ParsedRace[]
+  backgrounds: ParsedBackground[]
 }
 
 // ----------------------------- mapeamentos -----------------------------
@@ -78,6 +89,28 @@ const ABILITY_NAME_TO_KEY: Record<string, AbilityKey> = {
   intelligence: 'int',
   wisdom: 'wis',
   charisma: 'cha',
+}
+
+// ID de proficiencia de pericia -> nossa chave. Ex: ID_PROFICIENCY_SKILL_DECEPTION.
+const SKILL_ID_TO_KEY: Record<string, SkillKey> = {
+  ID_PROFICIENCY_SKILL_ACROBATICS: 'acrobacia',
+  ID_PROFICIENCY_SKILL_ANIMAL_HANDLING: 'lidarComAnimais',
+  ID_PROFICIENCY_SKILL_ARCANA: 'arcanismo',
+  ID_PROFICIENCY_SKILL_ATHLETICS: 'atletismo',
+  ID_PROFICIENCY_SKILL_DECEPTION: 'enganacao',
+  ID_PROFICIENCY_SKILL_HISTORY: 'historia',
+  ID_PROFICIENCY_SKILL_INSIGHT: 'intuicao',
+  ID_PROFICIENCY_SKILL_INTIMIDATION: 'intimidacao',
+  ID_PROFICIENCY_SKILL_INVESTIGATION: 'investigacao',
+  ID_PROFICIENCY_SKILL_MEDICINE: 'medicina',
+  ID_PROFICIENCY_SKILL_NATURE: 'natureza',
+  ID_PROFICIENCY_SKILL_PERCEPTION: 'percepcao',
+  ID_PROFICIENCY_SKILL_PERFORMANCE: 'atuacao',
+  ID_PROFICIENCY_SKILL_PERSUASION: 'persuasao',
+  ID_PROFICIENCY_SKILL_RELIGION: 'religiao',
+  ID_PROFICIENCY_SKILL_SLEIGHT_OF_HAND: 'prestidigitacao',
+  ID_PROFICIENCY_SKILL_STEALTH: 'furtividade',
+  ID_PROFICIENCY_SKILL_SURVIVAL: 'sobrevivencia',
 }
 
 const SAVE_ID_TO_ABILITY: Record<string, AbilityKey> = {
@@ -375,7 +408,43 @@ function parseRace(el: Element): ParsedRace {
   }
 }
 
-// Parseia um arquivo XML inteiro (classe + subclasses + features, ou racas).
+function toolLabel(id: string): string {
+  if (id.includes('THIEVES_TOOLS')) return 'Ferramentas de ladrão'
+  const raw = id
+    .replace(/^ID_PROFICIENCY_TOOL_PROFICIENCY_/, '')
+    .replace(/^ID_PROFICIENCY_TOOL_/, '')
+    .replace(/_/g, ' ')
+    .toLowerCase()
+  return raw.charAt(0).toUpperCase() + raw.slice(1)
+}
+
+function parseBackground(el: Element): ParsedBackground {
+  const skills: SkillKey[] = []
+  const tools: string[] = []
+  let languageChoices = 0
+  const rules = el.querySelector('rules')
+  if (rules) {
+    rules.querySelectorAll('grant[type="Proficiency"]').forEach((g) => {
+      const id = g.getAttribute('id') ?? ''
+      if (SKILL_ID_TO_KEY[id]) skills.push(SKILL_ID_TO_KEY[id])
+      else if (id.includes('TOOL')) tools.push(toolLabel(id))
+    })
+    rules.querySelectorAll('select[type="Language"]').forEach((s) => {
+      languageChoices += parseInt(s.getAttribute('number') ?? '1', 10) || 1
+    })
+  }
+  return {
+    id: el.getAttribute('id') ?? '',
+    name: el.getAttribute('name') ?? '',
+    source: el.getAttribute('source') ?? '',
+    skills,
+    languageChoices,
+    tools,
+    feature: null,
+  }
+}
+
+// Parseia um arquivo XML inteiro (classe + subclasses + features, racas ou antecedentes).
 export function parseRulesXml(xml: string): ParsedFile {
   const doc = parseXml(xml)
 
@@ -416,5 +485,10 @@ export function parseRulesXml(xml: string): ParsedFile {
     races.push(parseRace(el))
   })
 
-  return { classes, races }
+  const backgrounds: ParsedBackground[] = []
+  doc.querySelectorAll('element[type="Background"]').forEach((el) => {
+    backgrounds.push(parseBackground(el))
+  })
+
+  return { classes, races, backgrounds }
 }

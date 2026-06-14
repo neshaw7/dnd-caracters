@@ -147,6 +147,35 @@ export function toDisplayRace(enName: string): string {
   return RACE_EN_TO_PT[enName] ?? enName
 }
 
+// Antecedentes: nome em ingles (das regras) -> nome PT.
+export const BACKGROUND_EN_TO_PT: Record<string, string> = {
+  Acolyte: 'Acólito',
+  Charlatan: 'Charlatão',
+  Criminal: 'Criminoso',
+  Entertainer: 'Artista',
+  'Folk Hero': 'Herói do Povo',
+  'Guild Artisan': 'Artesão de Guilda',
+  Hermit: 'Eremita',
+  Noble: 'Nobre',
+  Outlander: 'Forasteiro',
+  Sage: 'Sábio',
+  Sailor: 'Marinheiro',
+  Soldier: 'Soldado',
+  Urchin: 'Órfão',
+}
+
+const BACKGROUND_PT_TO_EN: Record<string, string> = Object.fromEntries(
+  Object.entries(BACKGROUND_EN_TO_PT).map(([en, pt]) => [pt, en]),
+)
+
+export function toDisplayBackground(enName: string): string {
+  return BACKGROUND_EN_TO_PT[enName] ?? enName
+}
+
+export function toEnglishBackground(name: string): string {
+  return BACKGROUND_PT_TO_EN[name] ?? name
+}
+
 // Conjunto padrao de valores de atributo (Standard Array) do 5e.
 export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8] as const
 
