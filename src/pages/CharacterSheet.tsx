@@ -291,7 +291,7 @@ export function CharacterSheet() {
 
         {/* Magias */}
         {hasSpells && (
-          <div className="sheet-box sheet-avoid-break mt-5 p-4">
+          <div className="sheet-box sheet-page-break mt-5 p-4">
             <div className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1">
               <h2 className="sheet-title text-lg font-semibold">Magias</h2>
               {d.spellcasting.ability !== '' && (

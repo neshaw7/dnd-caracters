@@ -98,6 +98,11 @@
     break-inside: avoid;
   }
 
+  /* Comeca numa pagina nova (ex: pagina de magias). */
+  .sheet-page-break {
+    break-before: page;
+  }
+
   /* Forca layout em colunas na impressao (independente da largura da pagina). */
   .sheet-grid-3 {
     display: grid !important;
