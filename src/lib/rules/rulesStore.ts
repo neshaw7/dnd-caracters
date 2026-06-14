@@ -1,10 +1,10 @@
 import { supabase } from '../supabase'
-import type { ParsedClass, ParsedRace, ParsedBackground } from './parse'
+import type { ParsedClass, ParsedRace, ParsedBackground, ParsedSpell } from './parse'
 
 // Acesso as tabelas de regras (espelho no nosso Supabase).
 // rules_files = XML cru (backup); rules_elements = parseado e pronto pra uso.
 
-export type RuleKind = 'class' | 'race' | 'background'
+export type RuleKind = 'class' | 'race' | 'background' | 'spell'
 
 export interface RuleElementRow {
   id: string
@@ -12,7 +12,7 @@ export interface RuleElementRow {
   name: string
   name_pt: string | null
   source: string | null
-  data: ParsedClass | ParsedRace | ParsedBackground
+  data: ParsedClass | ParsedRace | ParsedBackground | ParsedSpell
 }
 
 export async function saveRulesFile(file: {
@@ -39,7 +39,7 @@ export async function saveRuleElement(el: {
   kind: RuleKind
   name: string
   source?: string
-  data: ParsedClass | ParsedRace | ParsedBackground
+  data: ParsedClass | ParsedRace | ParsedBackground | ParsedSpell
 }): Promise<void> {
   const { error } = await supabase.from('rules_elements').upsert(
     {
@@ -130,4 +130,23 @@ export async function getRuleBackgroundByName(
     .maybeSingle()
   if (error) throw error
   return (data?.data as ParsedBackground) ?? null
+}
+
+// Carrega todas as magias (para o seletor filtrar por classe/nivel no cliente).
+export async function listSpells(): Promise<ParsedSpell[]> {
+  const { data, error } = await supabase
+    .from('rules_elements')
+    .select('data')
+    .eq('kind', 'spell')
+  if (error) throw error
+  return (data ?? []).map((r) => r.data as ParsedSpell)
+}
+
+export async function countSpells(): Promise<number> {
+  const { count, error } = await supabase
+    .from('rules_elements')
+    .select('id', { count: 'exact', head: true })
+    .eq('kind', 'spell')
+  if (error) throw error
+  return count ?? 0
 }

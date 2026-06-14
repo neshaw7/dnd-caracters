@@ -65,10 +65,26 @@ export interface ParsedBackground {
   feature: { id: string; name: string; text: string } | null
 }
 
+export interface ParsedSpell {
+  id: string
+  name: string
+  level: number // 0 = truque
+  school: string
+  classes: string[] // classes que podem usar (do <supports>)
+  time: string
+  range: string
+  duration: string
+  components: string // ex: "V, S, M (...)"
+  concentration: boolean
+  ritual: boolean
+  text: string
+}
+
 export interface ParsedFile {
   classes: ParsedClass[]
   races: ParsedRace[]
   backgrounds: ParsedBackground[]
+  spells: ParsedSpell[]
 }
 
 // ----------------------------- mapeamentos -----------------------------
@@ -455,7 +471,43 @@ function parseBackground(
   }
 }
 
-// Parseia um arquivo XML inteiro (classe + subclasses + features, racas ou antecedentes).
+function setterValue(el: Element, name: string): string {
+  return el.querySelector(`setters > set[name="${name}"]`)?.textContent?.trim() ?? ''
+}
+
+function parseSpell(el: Element): ParsedSpell {
+  const v = (n: string) => setterValue(el, n)
+  const comps: string[] = []
+  if (v('hasVerbalComponent') === 'true') comps.push('V')
+  if (v('hasSomaticComponent') === 'true') comps.push('S')
+  if (v('hasMaterialComponent') === 'true') {
+    const mat = v('materialComponent')
+    comps.push(mat ? `M (${mat})` : 'M')
+  }
+  const paras = Array.from(el.querySelectorAll('description p'))
+    .map((p) => collapse(p.textContent ?? ''))
+    .filter(Boolean)
+  const supports = (el.querySelector('supports')?.textContent ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  return {
+    id: el.getAttribute('id') ?? '',
+    name: el.getAttribute('name') ?? '',
+    level: parseInt(v('level') || '0', 10) || 0,
+    school: v('school'),
+    classes: supports,
+    time: v('time'),
+    range: v('range'),
+    duration: v('duration'),
+    components: comps.join(', '),
+    concentration: v('isConcentration') === 'true',
+    ritual: v('isRitual') === 'true',
+    text: paras.join(' '),
+  }
+}
+
+// Parseia um arquivo XML inteiro (classe + subclasses + features, racas, antecedentes, magias).
 export function parseRulesXml(xml: string): ParsedFile {
   const doc = parseXml(xml)
 
@@ -503,5 +555,10 @@ export function parseRulesXml(xml: string): ParsedFile {
     backgrounds.push(parseBackground(el, featureMap))
   })
 
-  return { classes, races, backgrounds }
+  const spells: ParsedSpell[] = []
+  doc.querySelectorAll('element[type="Spell"]').forEach((el) => {
+    spells.push(parseSpell(el))
+  })
+
+  return { classes, races, backgrounds, spells }
 }

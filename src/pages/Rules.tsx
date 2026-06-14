@@ -7,7 +7,7 @@ import {
   type RuleSource,
 } from '../lib/rules/sources'
 import { importIndex, type ImportProgress } from '../lib/rules/importer'
-import { countRuleElements } from '../lib/rules/rulesStore'
+import { countRuleElements, countSpells } from '../lib/rules/rulesStore'
 
 const LS_KEY = 'regras_importadas'
 
@@ -57,14 +57,16 @@ function RuleRow({
 export function Rules() {
   const [progress, setProgress] = useState<ImportProgress | null>(null)
   const [busyKey, setBusyKey] = useState<string | null>(null)
-  const [counts, setCounts] = useState<{ classes: number; races: number } | null>(null)
+  const [counts, setCounts] = useState<{ classes: number; races: number; spells: number } | null>(
+    null,
+  )
   const [books, setBooks] = useState<RuleSource[]>([])
   const [imported, setImported] = useState<string[]>(loadImported())
 
   useEffect(() => {
     let active = true
-    countRuleElements()
-      .then((c) => active && setCounts(c))
+    Promise.all([countRuleElements(), countSpells()])
+      .then(([c, s]) => active && setCounts({ ...c, spells: s }))
       .catch(() => active && setCounts(null))
     fetchSupplementBooks()
       .then((b) => active && setBooks(b))
@@ -79,7 +81,8 @@ export function Rules() {
     setProgress(null)
     await importIndex(src.url, setProgress)
     try {
-      setCounts(await countRuleElements())
+      const [c, s] = await Promise.all([countRuleElements(), countSpells()])
+      setCounts({ ...c, spells: s })
     } catch {
       /* mantem contagem anterior */
     }
@@ -116,8 +119,9 @@ export function Rules() {
 
       {counts && (
         <p className="mt-3 text-sm text-parchment/60">
-          No banco agora: <strong className="text-gold-light">{counts.classes}</strong> classes
-          e <strong className="text-gold-light">{counts.races}</strong> raças.
+          No banco agora: <strong className="text-gold-light">{counts.classes}</strong> classes,{' '}
+          <strong className="text-gold-light">{counts.races}</strong> raças e{' '}
+          <strong className="text-gold-light">{counts.spells}</strong> magias.
         </p>
       )}
 

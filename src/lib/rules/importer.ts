@@ -79,8 +79,13 @@ export async function importIndex(indexUrl: string, onProgress: OnProgress): Pro
         const content = await res.text()
         const parsed = parseRulesXml(content)
 
-        // Salva o cru so de arquivos com conteudo util (classe/raca/antecedente).
-        if (parsed.classes.length || parsed.races.length || parsed.backgrounds.length) {
+        // Salva o cru so de arquivos com conteudo util.
+        if (
+          parsed.classes.length ||
+          parsed.races.length ||
+          parsed.backgrounds.length ||
+          parsed.spells.length
+        ) {
           await saveRulesFile({ path: pathFromUrl(url), url, content })
         }
 
@@ -97,6 +102,10 @@ export async function importIndex(indexUrl: string, onProgress: OnProgress): Pro
         for (const b of parsed.backgrounds) {
           if (!b.id) continue
           await saveRuleElement({ id: b.id, kind: 'background', name: b.name, source: b.source, data: b })
+        }
+        for (const sp of parsed.spells) {
+          if (!sp.id) continue
+          await saveRuleElement({ id: sp.id, kind: 'spell', name: sp.name, source: 'spell', data: sp })
         }
       } catch {
         // Ignora arquivos que falharem e segue.
