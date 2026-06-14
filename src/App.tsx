@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Login } from './pages/Login'
 import { Gallery } from './pages/Gallery'
 import { CharacterEditor } from './pages/CharacterEditor'
+import { CharacterWizard } from './pages/CharacterWizard'
 import { CharacterSheet } from './pages/CharacterSheet'
 import { Rules } from './pages/Rules'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -31,6 +32,14 @@ function App() {
         element={
           <ProtectedRoute>
             <CharacterEditor />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/personagem/:id/criar"
+        element={
+          <ProtectedRoute>
+            <CharacterWizard />
           </ProtectedRoute>
         }
       />

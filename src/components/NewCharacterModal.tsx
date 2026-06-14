@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { TextField, NumberField, SelectField } from './form'
 import { useClassOptions } from '../lib/rules/useClassOptions'
+import { useRaceOptions } from '../lib/rules/useRaceOptions'
 
 export interface NewCharacterValues {
   name: string
@@ -23,6 +24,7 @@ export function NewCharacterModal({
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const classOptions = useClassOptions()
+  const raceOptions = useRaceOptions()
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -68,12 +70,22 @@ export function NewCharacterModal({
             />
             <NumberField label="Nível" value={level} onChange={setLevel} min={1} max={20} />
           </div>
-          <TextField
-            label="Raça"
-            value={race}
-            onChange={setRace}
-            placeholder="Ex: Meio-elfo"
-          />
+          {raceOptions.length > 0 ? (
+            <SelectField
+              label="Raça"
+              value={race}
+              onChange={setRace}
+              options={raceOptions}
+              placeholder="Selecione a raça..."
+            />
+          ) : (
+            <TextField
+              label="Raça"
+              value={race}
+              onChange={setRace}
+              placeholder="Importe as regras para escolher a raça"
+            />
+          )}
 
           {erro && (
             <p className="rounded-lg bg-wine/30 px-3 py-2 text-sm text-red-200">

@@ -56,7 +56,7 @@ export function Gallery() {
       level: values.level,
       race: values.race || undefined,
     })
-    navigate(`/personagem/${id}/editar`)
+    navigate(`/personagem/${id}/criar`)
   }
 
   async function handleConfirmDelete() {

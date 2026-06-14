@@ -122,6 +122,53 @@ export function toDisplayClass(enName: string): string {
   return CLASS_EN_TO_PT[enName] ?? enName
 }
 
+// Racas: nome PT -> nome em ingles usado nas regras importadas.
+export const RACE_PT_TO_EN: Record<string, string> = {
+  'Humano': 'Human',
+  'Anão': 'Dwarf',
+  'Elfo': 'Elf',
+  'Gnomo': 'Gnome',
+  'Meio-elfo': 'Half-Elf',
+  'Halfling': 'Halfling',
+  'Meio-orc': 'Half-Orc',
+  'Tiefling': 'Tiefling',
+  'Draconato': 'Dragonborn',
+}
+
+export const RACE_EN_TO_PT: Record<string, string> = Object.fromEntries(
+  Object.entries(RACE_PT_TO_EN).map(([pt, en]) => [en, pt]),
+)
+
+export function toEnglishRace(name: string): string {
+  return RACE_PT_TO_EN[name] ?? name
+}
+
+export function toDisplayRace(enName: string): string {
+  return RACE_EN_TO_PT[enName] ?? enName
+}
+
+// Conjunto padrao de valores de atributo (Standard Array) do 5e.
+export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8] as const
+
+// Idiomas comuns para escolha (em PT), sem o Comum (que ja vem por padrao).
+export const LANGUAGES_PT = [
+  'Anão',
+  'Élfico',
+  'Gigante',
+  'Gnômico',
+  'Goblin',
+  'Halfling',
+  'Orc',
+  'Abissal',
+  'Celestial',
+  'Dracônico',
+  'Fala Profunda',
+  'Infernal',
+  'Primordial',
+  'Silvestre',
+  'Subcomum',
+] as const
+
 export const ALIGNMENTS = [
   'Leal e Bom',
   'Neutro e Bom',
