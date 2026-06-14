@@ -23,6 +23,7 @@ import {
   listRuleBackgrounds,
 } from '../lib/rules/rulesStore'
 import { applyRules } from '../lib/rules/autofill'
+import { CLASS_EQUIPMENT, BACKGROUND_EQUIPMENT } from '../lib/rules/equipment'
 import type { ParsedClass, ParsedRace, ParsedBackground } from '../lib/rules/parse'
 import type { AbilityScores, CharacterData } from '../types/character'
 import { emptyCharacterData } from '../types/character'
@@ -66,6 +67,8 @@ export function CharacterWizard() {
   const [expertiseTools, setExpertiseTools] = useState(false)
   const [languages, setLanguages] = useState<string[]>([])
   const [subclass, setSubclass] = useState('')
+  const [equipMode, setEquipMode] = useState<'itens' | 'ouro'>('itens')
+  const [equipChoices, setEquipChoices] = useState<number[]>([])
 
   const [stepIndex, setStepIndex] = useState(0)
 
@@ -125,10 +128,14 @@ export function CharacterWizard() {
   const bgSkills = bgData?.skills ?? []
   const totalLangPicks = (isHuman ? 1 : 0) + (bgData?.languageChoices ?? 0)
 
+  const clsEquip = CLASS_EQUIPMENT[toEnglishClass(charClass)] ?? null
+  const bgEquip = BACKGROUND_EQUIPMENT[toEnglishBackground(background)] ?? null
+
   const steps = useMemo(() => {
     const s = ['Atributos', 'Antecedente', 'Perícias']
     if (isRogue) s.push('Especialização')
     if (totalLangPicks > 0) s.push('Idiomas')
+    s.push('Equipamento')
     if (level >= 3 && (cls?.archetypes.length ?? 0) > 0) s.push('Subclasse')
     s.push('Revisão')
     return s
@@ -231,8 +238,20 @@ export function CharacterWizard() {
     if (currentStep === 'Idiomas') {
       return langPicks.every((l) => l) && new Set(langPicks).size === langPicks.length
     }
+    if (currentStep === 'Equipamento') {
+      if (equipMode === 'ouro' || !clsEquip) return true
+      return clsEquip.choices.every((_, i) => (equipChoices[i] ?? -1) >= 0)
+    }
     if (currentStep === 'Subclasse') return subclass !== ''
     return true
+  }
+
+  function setEquipChoice(i: number, optIdx: number) {
+    setEquipChoices((prev) => {
+      const next = [...prev]
+      next[i] = optIdx
+      return next
+    })
   }
 
   async function finish() {
@@ -263,6 +282,25 @@ export function CharacterWizard() {
         next.otherProficiencies =
           `${next.otherProficiencies}\nEspecialização: Ferramentas de ladrão`.trim()
       }
+
+      // Equipamento inicial (classe + antecedente) ou ouro.
+      const equipItems: string[] = []
+      if (equipMode === 'itens' && clsEquip) {
+        clsEquip.choices.forEach((c, i) => {
+          const opt = c.options[equipChoices[i] ?? -1]
+          if (opt) equipItems.push(opt)
+        })
+        equipItems.push(...clsEquip.fixed)
+      }
+      if (bgEquip) equipItems.push(...bgEquip.fixed)
+      next.equipment = equipItems.map((it) => `• ${it}`).join('\n')
+      let gp = bgEquip?.gp ?? 0
+      if (equipMode === 'ouro' && clsEquip) {
+        gp += clsEquip.goldAverage
+        next.equipment =
+          `${next.equipment}\n• Ouro inicial da classe: ${clsEquip.goldText} (≈ ${clsEquip.goldAverage} po)`.trim()
+      }
+      next.coins = { ...next.coins, gp: (next.coins.gp || 0) + gp }
 
       await updateCharacter(id, {
         name,
@@ -565,6 +603,84 @@ export function CharacterWizard() {
           </div>
         )}
 
+        {/* Equipamento */}
+        {currentStep === 'Equipamento' && (
+          <div>
+            <h2 className="font-display mb-1 text-lg font-semibold text-gold-light">
+              Equipamento inicial
+            </h2>
+            <p className="mb-4 text-sm text-parchment/60">
+              Pegue o equipamento da <strong>classe</strong> ou troque por{' '}
+              <strong>ouro</strong> para comprar o seu. O equipamento do{' '}
+              <strong>antecedente</strong> você recebe sempre.
+            </p>
+
+            <div className="mb-4 inline-flex rounded-lg bg-night p-1 text-sm">
+              <button
+                type="button"
+                onClick={() => setEquipMode('itens')}
+                className={`rounded-md px-3 py-1 ${equipMode === 'itens' ? 'bg-gold/20 text-gold-light' : 'text-parchment/60'}`}
+              >
+                Equipamento da classe
+              </button>
+              <button
+                type="button"
+                onClick={() => setEquipMode('ouro')}
+                className={`rounded-md px-3 py-1 ${equipMode === 'ouro' ? 'bg-gold/20 text-gold-light' : 'text-parchment/60'}`}
+              >
+                Ouro {clsEquip ? `(${clsEquip.goldText})` : ''}
+              </button>
+            </div>
+
+            {equipMode === 'itens' && clsEquip && (
+              <div className="space-y-4">
+                {clsEquip.choices.map((c, i) => (
+                  <div key={i}>
+                    <p className="mb-1 text-sm text-parchment/70">{c.label}</p>
+                    <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                      {c.options.map((opt, j) => (
+                        <label
+                          key={j}
+                          className={`flex items-center gap-2 rounded-lg px-3 py-2 ${(equipChoices[i] ?? -1) === j ? 'bg-gold/10' : 'hover:bg-gold/5'}`}
+                        >
+                          <input
+                            type="radio"
+                            name={`equip-${i}`}
+                            checked={(equipChoices[i] ?? -1) === j}
+                            onChange={() => setEquipChoice(i, j)}
+                            className="h-4 w-4 accent-gold"
+                          />
+                          <span className="text-parchment/90">{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className="rounded-lg border border-gold/15 bg-night p-3 text-sm">
+                  <span className="text-parchment/60">Você também recebe:</span>{' '}
+                  {clsEquip.fixed.join(', ')}
+                </div>
+              </div>
+            )}
+
+            {equipMode === 'ouro' && clsEquip && (
+              <div className="rounded-lg border border-gold/15 bg-night p-3 text-sm">
+                Você recebe <strong>{clsEquip.goldText}</strong> (≈{' '}
+                {clsEquip.goldAverage} po) para comprar seu equipamento, em vez do
+                equipamento da classe.
+              </div>
+            )}
+
+            {bgEquip && (
+              <div className="mt-4 rounded-lg border border-gold/15 bg-night p-3 text-sm">
+                <span className="text-parchment/60">Do antecedente ({background}):</span>{' '}
+                {bgEquip.fixed.join(', ')}
+                {bgEquip.gp > 0 && `, ${bgEquip.gp} po`}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Subclasse */}
         {currentStep === 'Subclasse' && (
           <div>
@@ -625,6 +741,18 @@ export function CharacterWizard() {
               </li>
               <li>
                 <strong>Idiomas:</strong> {['Comum', ...langPicks.filter(Boolean)].join(', ')}
+              </li>
+              <li>
+                <strong>Equipamento:</strong>{' '}
+                {equipMode === 'ouro'
+                  ? `Ouro inicial da classe (${clsEquip?.goldText ?? ''})`
+                  : clsEquip
+                    ? clsEquip.choices
+                        .map((c, i) => c.options[equipChoices[i] ?? -1])
+                        .filter(Boolean)
+                        .join(', ') + ` + ${clsEquip.fixed.join(', ')}`
+                    : '—'}
+                {bgEquip && ` · Antecedente: ${bgEquip.fixed.join(', ')}, ${bgEquip.gp} po`}
               </li>
               {subclass && (
                 <li>
