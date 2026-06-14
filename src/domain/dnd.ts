@@ -104,6 +104,22 @@ export const CLASS_PT_TO_EN: Record<string, string> = {
   'Monge': 'Monk',
   'Paladino': 'Paladin',
   'Patrulheiro': 'Ranger',
+  'Artífice': 'Artificer',
+}
+
+// Inverso: nome em ingles (das regras) -> nome PT.
+export const CLASS_EN_TO_PT: Record<string, string> = Object.fromEntries(
+  Object.entries(CLASS_PT_TO_EN).map(([pt, en]) => [en, pt]),
+)
+
+// Converte um nome exibido (PT ou ingles) para o ingles usado nas regras.
+export function toEnglishClass(name: string): string {
+  return CLASS_PT_TO_EN[name] ?? name
+}
+
+// Converte um nome em ingles (das regras) para o nome a exibir (PT se houver).
+export function toDisplayClass(enName: string): string {
+  return CLASS_EN_TO_PT[enName] ?? enName
 }
 
 export const ALIGNMENTS = [

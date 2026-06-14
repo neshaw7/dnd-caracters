@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  CLASSES,
-  CLASS_PT_TO_EN,
   ALIGNMENTS,
   SKILLS,
   abilityModifier,
   formatModifier,
   proficiencyBonus as calcProfBonus,
+  toEnglishClass,
   type AbilityKey,
   type SkillKey,
 } from '../domain/dnd'
@@ -16,6 +15,7 @@ import type { CharacterData } from '../types/character'
 import { emptyCharacterData } from '../types/character'
 import { getRuleClassByName } from '../lib/rules/rulesStore'
 import { applyRules, AUTO_MARK } from '../lib/rules/autofill'
+import { useClassOptions } from '../lib/rules/useClassOptions'
 import type { ParsedClass } from '../lib/rules/parse'
 import {
   TextField,
@@ -37,6 +37,7 @@ function toggle<T>(arr: T[], value: T): T[] {
 export function CharacterEditor() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const classOptions = useClassOptions()
 
   const [name, setName] = useState('')
   const [charClass, setCharClass] = useState('')
@@ -101,7 +102,7 @@ export function CharacterEditor() {
   // Carrega a classe das regras (do nosso banco) quando a classe muda.
   // Na criacao, ja preenche sozinho se a ficha ainda nao tem bloco automatico.
   useEffect(() => {
-    const en = CLASS_PT_TO_EN[charClass]
+    const en = charClass ? toEnglishClass(charClass) : ''
     if (!en) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setRuleClass(null)
@@ -212,7 +213,7 @@ export function CharacterEditor() {
               label="Classe"
               value={charClass}
               onChange={bind(setCharClass)}
-              options={CLASSES}
+              options={classOptions}
             />
             <NumberField label="Nível" value={level} onChange={bind(setLevel)} min={1} max={20} />
             <SelectField

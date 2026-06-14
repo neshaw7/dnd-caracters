@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { CLASSES } from '../domain/dnd'
 import { TextField, NumberField, SelectField } from './form'
+import { useClassOptions } from '../lib/rules/useClassOptions'
 
 export interface NewCharacterValues {
   name: string
@@ -22,6 +22,7 @@ export function NewCharacterModal({
   const [race, setRace] = useState('')
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const classOptions = useClassOptions()
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -63,7 +64,7 @@ export function NewCharacterModal({
               label="Classe"
               value={charClass}
               onChange={setCharClass}
-              options={CLASSES}
+              options={classOptions}
             />
             <NumberField label="Nível" value={level} onChange={setLevel} min={1} max={20} />
           </div>
