@@ -1,9 +1,15 @@
-import { abilityModifier, ABILITY_LABEL, SKILLS, type AbilityKey } from '../../domain/dnd'
-import type { CharacterData } from '../../types/character'
-import type { ParsedClass, ParsedRace, ParsedArchetype } from './parse'
+import {
+  abilityModifier,
+  ABILITY_LABEL,
+  SKILLS,
+  toDisplayClass,
+  type AbilityKey,
+} from '../../domain/dnd'
+import type { AppliedFeature, CharacterData } from '../../types/character'
+import type { ParsedClass, ParsedRace, ParsedArchetype, ParsedFeature } from './parse'
+import { FEATURE_PT, SUBCLASS_PT } from './translations'
 
 // Marcador que separa o texto do usuario do conteudo gerado automaticamente.
-// Tudo abaixo dele e regenerado a cada preenchimento; o que esta acima e preservado.
 export const AUTO_MARK = '——— preenchido automaticamente das regras (não editar abaixo) ———'
 
 function stripAuto(text: string): string {
@@ -28,6 +34,12 @@ function ftToMeters(ft: number): number {
   return Math.round(ft * 0.3)
 }
 
+// Aplica a traducao PT a uma feature (se houver) e devolve {name, text}.
+function translateFeature(f: ParsedFeature): { name: string; text: string } {
+  const pt = FEATURE_PT[f.id]
+  return pt ? { name: pt.name, text: pt.text } : { name: f.name, text: f.text }
+}
+
 export interface AutofillInput {
   cls: ParsedClass | null
   archetype: ParsedArchetype | null
@@ -35,8 +47,7 @@ export interface AutofillInput {
   level: number
 }
 
-// Aplica os dados das regras sobre a ficha atual, preservando o texto do
-// usuario (acima do marcador) e regenerando o bloco automatico.
+// Aplica os dados das regras sobre a ficha atual.
 export function applyRules(data: CharacterData, input: AutofillInput): CharacterData {
   const { cls, archetype, race, level } = input
   const next: CharacterData = structuredClone(data)
@@ -54,33 +65,48 @@ export function applyRules(data: CharacterData, input: AutofillInput): Character
     next.spellcasting.ability = archetype.spellcastingAbility
   }
 
-  if (race) {
-    if (race.speedFt) next.speed = ftToMeters(race.speedFt)
-  }
+  if (race?.speedFt) next.speed = ftToMeters(race.speedFt)
 
-  // --- Bloco automatico de caracteristicas (classe + subclasse, ate o nivel) ---
-  const featLines: string[] = []
+  // --- Caracteristicas estruturadas (viram cards na ficha) ---
+  const features: AppliedFeature[] = []
   if (cls) {
-    featLines.push(`### ${cls.name} (nível ${level})`)
+    const clsLabel = toDisplayClass(cls.name)
     cls.features
       .filter((f) => f.level <= level)
-      .forEach((f) => featLines.push(`• [N${f.level}] ${f.name}: ${f.text}`))
+      .forEach((f) => {
+        const t = translateFeature(f)
+        features.push({ source: clsLabel, level: f.level, name: t.name, text: t.text })
+      })
   }
   if (archetype) {
-    featLines.push('', `### ${archetype.name}`)
+    const subLabel = SUBCLASS_PT[archetype.name] ?? archetype.name
     archetype.features
       .filter((f) => f.level <= level)
-      .forEach((f) => featLines.push(`• [N${f.level}] ${f.name}: ${f.text}`))
+      .forEach((f) => {
+        const t = translateFeature(f)
+        features.push({ source: subLabel, level: f.level, name: t.name, text: t.text })
+      })
   }
-  if (race?.traits.length) {
-    featLines.push('', `### Traços de ${race.name}`)
-    race.traits.forEach((t) => featLines.push(`• ${t.name}: ${t.text}`))
-  }
-  if (featLines.length) {
-    next.featuresAndTraits = withAuto(next.featuresAndTraits, featLines.join('\n'))
+  next.appliedFeatures = features
+  // Remove bloco automatico antigo que ficava no texto livre (versoes anteriores).
+  next.featuresAndTraits = stripAuto(next.featuresAndTraits)
+
+  // --- Espacos de magia: soma cumulativa dos stats ate o nivel do personagem ---
+  const slotStats = [...(cls?.spellSlots ?? []), ...(archetype?.spellSlots ?? [])]
+  if (slotStats.length) {
+    const totals = Array(10).fill(0) as number[]
+    for (const s of slotStats) {
+      if (s.atLevel <= level && s.circle >= 1 && s.circle <= 9) {
+        totals[s.circle] += s.value
+      }
+    }
+    next.spellcasting.slots = next.spellcasting.slots.map((slot, i) => ({
+      total: totals[i],
+      expended: totals[i] ? Math.min(slot.expended, totals[i]) : 0,
+    }))
   }
 
-  // --- Bloco automatico de proficiencias e idiomas ---
+  // --- Bloco de proficiencias e idiomas (texto) ---
   const profLines: string[] = []
   if (cls) {
     if (cls.armor.length) profLines.push(`Armaduras: ${cls.armor.join(', ')}`)

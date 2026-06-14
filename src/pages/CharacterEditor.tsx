@@ -14,7 +14,7 @@ import { getCharacter, updateCharacter } from '../lib/characters'
 import type { CharacterData } from '../types/character'
 import { emptyCharacterData } from '../types/character'
 import { getRuleClassByName } from '../lib/rules/rulesStore'
-import { applyRules, AUTO_MARK } from '../lib/rules/autofill'
+import { applyRules } from '../lib/rules/autofill'
 import { useClassOptions } from '../lib/rules/useClassOptions'
 import type { ParsedClass } from '../lib/rules/parse'
 import {
@@ -113,7 +113,7 @@ export function CharacterEditor() {
       .then((rc) => {
         if (!active) return
         setRuleClass(rc)
-        if (rc && !data.featuresAndTraits.includes(AUTO_MARK)) {
+        if (rc && data.appliedFeatures.length === 0) {
           const archetype = rc.archetypes.find((a) => a.name === data.subclass) ?? null
           setData(applyRules(data, { cls: rc, archetype, race: null, level }))
           setDirty(true)
@@ -442,7 +442,14 @@ export function CharacterEditor() {
 
         {/* Caracteristicas e proficiencias */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <SectionCard title="Características e traços">
+          <SectionCard title="Anotações">
+            <p className="mb-2 text-xs text-parchment/50">
+              As características de classe/subclasse são preenchidas automaticamente
+              e aparecem como cards na ficha
+              {data.appliedFeatures.length > 0 &&
+                ` (${data.appliedFeatures.length} aplicadas)`}
+              . Use este campo para anotações livres.
+            </p>
             <TextArea
               label=""
               value={data.featuresAndTraits}

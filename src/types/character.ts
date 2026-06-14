@@ -77,6 +77,14 @@ export interface Spellcasting {
   spells: Spell[]
 }
 
+// Caracteristica aplicada pelas regras (classe/subclasse), exibida como card.
+export interface AppliedFeature {
+  source: string // ex: "Ladino" ou "Trapaceiro Arcano"
+  level: number
+  name: string
+  text: string
+}
+
 // Ficha completa guardada na coluna JSONB "data".
 export interface CharacterData {
   // Identidade
@@ -107,9 +115,12 @@ export interface CharacterData {
   equipment: string
   coins: Coins
 
+  // Caracteristicas aplicadas automaticamente das regras (classe/subclasse)
+  appliedFeatures: AppliedFeature[]
+
   // Texto descritivo
   personality: Personality
-  featuresAndTraits: string // características e traços
+  featuresAndTraits: string // características e traços (anotações livres do jogador)
   otherProficiencies: string // outras proficiências e idiomas
   backstory: string // história do personagem
 
@@ -143,6 +154,7 @@ export function emptyCharacterData(): CharacterData {
     attacks: [],
     equipment: '',
     coins: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+    appliedFeatures: [],
     personality: { traits: '', ideals: '', bonds: '', flaws: '' },
     featuresAndTraits: '',
     otherProficiencies: '',

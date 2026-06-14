@@ -11,11 +11,20 @@ export interface ParsedFeature {
   text: string
 }
 
+// Entrada de espaco de magia: "circle" espacos do circulo, ganhos "atLevel".
+// Sao cumulativos (somar todos com atLevel <= nivel do personagem).
+export interface SlotStat {
+  circle: number
+  value: number
+  atLevel: number
+}
+
 export interface ParsedArchetype {
   id: string
   name: string
   source: string
   spellcastingAbility: AbilityKey | null
+  spellSlots: SlotStat[]
   features: ParsedFeature[]
 }
 
@@ -30,6 +39,7 @@ export interface ParsedClass {
   tools: string[]
   skillChoose: number
   skillOptions: SkillKey[]
+  spellSlots: SlotStat[]
   features: ParsedFeature[]
   archetypes: ParsedArchetype[]
 }
@@ -173,6 +183,22 @@ function spellcastingAbilityOf(el: Element): AbilityKey | null {
   return ABILITY_NAME_TO_KEY[ability] ?? null
 }
 
+// Extrai espacos de magia de uma feature: <stat name="...slots:N" value level>.
+function slotStatsOf(el: Element): SlotStat[] {
+  const out: SlotStat[] = []
+  el.querySelectorAll('rules stat').forEach((st) => {
+    const name = st.getAttribute('name') ?? ''
+    const m = name.match(/slots:(\d+)\s*$/)
+    if (!m) return
+    out.push({
+      circle: parseInt(m[1], 10),
+      value: parseInt(st.getAttribute('value') ?? '0', 10) || 0,
+      atLevel: parseInt(st.getAttribute('level') ?? '1', 10) || 1,
+    })
+  })
+  return out
+}
+
 // ----------------------------- parser -----------------------------
 
 function parseHitDie(el: Element): number {
@@ -218,6 +244,7 @@ function grantsOf(el: Element, grantType: string): { id: string; level: number }
 function parseClass(
   el: Element,
   featureMap: Map<string, { name: string; text: string }>,
+  slotStatsByFeatureId: Map<string, SlotStat[]>,
   archetypes: ParsedArchetype[],
 ): ParsedClass {
   const rules = el.querySelector('rules')
@@ -245,6 +272,7 @@ function parseClass(
   }
 
   const descText = el.querySelector('description')?.textContent ?? ''
+  const grants = grantsOf(el, 'Class Feature')
 
   return {
     id: el.getAttribute('id') ?? '',
@@ -257,7 +285,8 @@ function parseClass(
     tools,
     skillChoose,
     skillOptions: parseSkillOptions(descText),
-    features: resolveFeatures(grantsOf(el, 'Class Feature'), featureMap),
+    spellSlots: grants.flatMap((g) => slotStatsByFeatureId.get(g.id) ?? []),
+    features: resolveFeatures(grants, featureMap),
     archetypes,
   }
 }
@@ -266,6 +295,7 @@ function parseArchetype(
   el: Element,
   featureMap: Map<string, { name: string; text: string }>,
   spellcastingByFeatureId: Map<string, AbilityKey>,
+  slotStatsByFeatureId: Map<string, SlotStat[]>,
 ): ParsedArchetype {
   const grants = grantsOf(el, 'Archetype Feature')
   let spellcastingAbility: AbilityKey | null = null
@@ -280,6 +310,7 @@ function parseArchetype(
     name: el.getAttribute('name') ?? '',
     source: el.getAttribute('source') ?? '',
     spellcastingAbility,
+    spellSlots: grants.flatMap((g) => slotStatsByFeatureId.get(g.id) ?? []),
     features: resolveFeatures(grants, featureMap),
   }
 }
@@ -352,6 +383,7 @@ export function parseRulesXml(xml: string): ParsedFile {
   // e mapa de conjuracao por feature.
   const featureMap = new Map<string, { name: string; text: string }>()
   const spellcastingByFeatureId = new Map<string, AbilityKey>()
+  const slotStatsByFeatureId = new Map<string, SlotStat[]>()
   doc
     .querySelectorAll('element[type="Class Feature"], element[type="Archetype Feature"]')
     .forEach((el) => {
@@ -360,19 +392,23 @@ export function parseRulesXml(xml: string): ParsedFile {
       featureMap.set(id, { name: el.getAttribute('name') ?? '', text: featureText(el) })
       const ability = spellcastingAbilityOf(el)
       if (ability) spellcastingByFeatureId.set(id, ability)
+      const slots = slotStatsOf(el)
+      if (slots.length) slotStatsByFeatureId.set(id, slots)
     })
 
   // Arquetipos (subclasses) do arquivo.
   const archetypes: ParsedArchetype[] = []
   doc.querySelectorAll('element[type="Archetype"]').forEach((el) => {
-    archetypes.push(parseArchetype(el, featureMap, spellcastingByFeatureId))
+    archetypes.push(
+      parseArchetype(el, featureMap, spellcastingByFeatureId, slotStatsByFeatureId),
+    )
   })
 
   // Classes (associa todos os arquetipos do arquivo a classe, ja que cada
   // arquivo de classe contem so uma classe + suas subclasses).
   const classes: ParsedClass[] = []
   doc.querySelectorAll('element[type="Class"]').forEach((el) => {
-    classes.push(parseClass(el, featureMap, archetypes))
+    classes.push(parseClass(el, featureMap, slotStatsByFeatureId, archetypes))
   })
 
   const races: ParsedRace[] = []

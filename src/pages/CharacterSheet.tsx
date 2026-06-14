@@ -253,7 +253,7 @@ export function CharacterSheet() {
 
             {d.featuresAndTraits && (
               <div className="sheet-box sheet-avoid-break p-3">
-                <h2 className="sheet-label mb-1">Características e Traços</h2>
+                <h2 className="sheet-label mb-1">Anotações</h2>
                 <p className="whitespace-pre-wrap text-sm">{d.featuresAndTraits}</p>
               </div>
             )}
@@ -266,6 +266,28 @@ export function CharacterSheet() {
             )}
           </div>
         </div>
+
+        {/* Caracteristicas de classe/subclasse (um card por feature) */}
+        {d.appliedFeatures.length > 0 && (
+          <div className="mt-5">
+            <h2 className="sheet-title mb-2 text-lg font-semibold">
+              Características de Classe
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {d.appliedFeatures.map((f, i) => (
+                <div key={i} className="sheet-box sheet-avoid-break p-3">
+                  <div className="mb-1 flex items-baseline justify-between gap-2">
+                    <h3 className="sheet-title font-semibold">{f.name}</h3>
+                    <span className="sheet-label shrink-0">
+                      {f.source} · Nv {f.level}
+                    </span>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm leading-snug">{f.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Magias */}
         {hasSpells && (
@@ -293,6 +315,21 @@ export function CharacterSheet() {
                 </>
               )}
             </div>
+            {d.spellcasting.slots.some((s) => s.total > 0) && (
+              <div className="mb-3">
+                <span className="sheet-label">Espaços de magia</span>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {d.spellcasting.slots.map((s, lvl) =>
+                    lvl >= 1 && s.total > 0 ? (
+                      <div key={lvl} className="sheet-box px-3 py-1 text-center">
+                        <span className="sheet-label">{lvl}º círculo</span>
+                        <div className="text-sm font-bold">{s.total}</div>
+                      </div>
+                    ) : null,
+                  )}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((lvl) => {
                 const spells = d.spellcasting.spells.filter((s) => s.level === lvl)
