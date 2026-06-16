@@ -54,7 +54,7 @@ export function CharacterEditor() {
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [savedAt, setSavedAt] = useState(false)
+  const [, setSavedAt] = useState(false)
   const [dirty, setDirty] = useState(false)
 
   useEffect(() => {
@@ -162,7 +162,7 @@ export function CharacterEditor() {
     }
   }
 
-  async function handleSave() {
+  const handleSave = useCallback(async () => {
     if (!id) return
     setSaving(true)
     setErro(null)
@@ -182,7 +182,16 @@ export function CharacterEditor() {
     } finally {
       setSaving(false)
     }
-  }
+  }, [id, name, charClass, level, race, avatarUrl, data])
+
+  // Autosave: salva sozinho ~1,2s depois da ultima alteracao.
+  useEffect(() => {
+    if (!dirty) return
+    const t = setTimeout(() => {
+      void handleSave()
+    }, 1200)
+    return () => clearTimeout(t)
+  }, [dirty, handleSave])
 
   if (loading) {
     return <p className="py-20 text-center text-parchment/60">Carregando ficha...</p>
@@ -206,22 +215,21 @@ export function CharacterEditor() {
           ← Voltar
         </Link>
         <div className="flex items-center gap-3">
-          {dirty && <span className="text-xs text-amber-300/70">alterações não salvas</span>}
-          {savedAt && <span className="text-xs text-emerald-300/80">salvo ✓</span>}
+          <span className="text-xs text-parchment/60">
+            {saving ? (
+              'Salvando...'
+            ) : dirty ? (
+              'Salvando automaticamente...'
+            ) : (
+              <span className="text-emerald-300/80">Tudo salvo ✓</span>
+            )}
+          </span>
           <Link
             to={`/personagem/${id}`}
             className="rounded-lg border border-gold/30 px-4 py-2 text-sm text-parchment/80 transition hover:border-gold/60"
           >
             Ver ficha
           </Link>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="font-display rounded-lg bg-gold px-5 py-2 text-sm font-semibold text-night transition hover:bg-gold-light disabled:opacity-50"
-          >
-            {saving ? 'Salvando...' : 'Salvar'}
-          </button>
         </div>
       </div>
 
@@ -525,16 +533,15 @@ export function CharacterEditor() {
         </SectionCard>
       </div>
 
-      {/* Barra fixa de salvar (mobile-friendly) */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gold/20 bg-night/95 px-4 py-3 backdrop-blur sm:hidden">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="font-display w-full rounded-lg bg-gold py-3 font-semibold text-night transition hover:bg-gold-light disabled:opacity-50"
-        >
-          {saving ? 'Salvando...' : dirty ? 'Salvar alterações' : 'Salvo ✓'}
-        </button>
+      {/* Status de autosave fixo (mobile) */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gold/20 bg-night/95 px-4 py-2 text-center text-sm backdrop-blur sm:hidden">
+        {saving ? (
+          <span className="text-parchment/70">Salvando...</span>
+        ) : dirty ? (
+          <span className="text-parchment/70">Salvando automaticamente...</span>
+        ) : (
+          <span className="text-emerald-300/80">Tudo salvo ✓</span>
+        )}
       </div>
 
       <div className="mt-6 text-center">
