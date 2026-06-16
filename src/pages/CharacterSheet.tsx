@@ -278,9 +278,10 @@ export function CharacterSheet() {
         {/* Caracteristicas de classe/subclasse (um card por feature) */}
         {d.appliedFeatures.length > 0 && (
           <div className="mt-5">
-            <h2 className="sheet-title mb-2 text-lg font-semibold">
+            <h2 className="sheet-title text-lg font-semibold">
               Características de Classe
             </h2>
+            <Flourish width={180} className="mb-2 print:hidden" />
             <div className="sheet-grid-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {d.appliedFeatures.map((f, i) => (
                 <div key={i} className="sheet-box sheet-avoid-break p-3">
@@ -370,7 +371,8 @@ export function CharacterSheet() {
         {(d.backstory ||
           Object.values(d.appearance).some(Boolean)) && (
           <div className="sheet-box sheet-avoid-break mt-5 p-4">
-            <h2 className="sheet-title mb-2 text-lg font-semibold">Aparência e História</h2>
+            <h2 className="sheet-title text-lg font-semibold">Aparência e História</h2>
+            <Flourish width={180} className="mb-2 print:hidden" />
             <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
               {d.appearance.age && <HeaderField label="Idade" value={d.appearance.age} />}
               {d.appearance.height && <HeaderField label="Altura" value={d.appearance.height} />}
@@ -388,9 +390,10 @@ export function CharacterSheet() {
         {/* Descricoes das magias (paginas finais), agrupadas por nivel */}
         {d.spellcasting.spells.some((s) => s.description?.trim()) && (
           <div className="sheet-page-break mt-5">
-            <h2 className="sheet-title mb-3 text-lg font-semibold">
+            <h2 className="sheet-title text-lg font-semibold">
               Descrições das Magias
             </h2>
+            <Flourish width={180} className="mb-3 print:hidden" />
             <div className="space-y-4">
               {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((lvl) => {
                 const spells = d.spellcasting.spells.filter(
