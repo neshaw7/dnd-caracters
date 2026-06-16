@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import * as Tabs from '@radix-ui/react-tabs'
+import { motion } from 'framer-motion'
 import {
   ALIGNMENTS,
   SKILLS,
@@ -36,6 +38,32 @@ function toggle<T>(arr: T[], value: T): T[] {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
 }
 
+const EDITOR_TABS = [
+  { id: 'identidade', label: 'Identidade' },
+  { id: 'atributos', label: 'Atributos' },
+  { id: 'combate', label: 'Combate' },
+  { id: 'magias', label: 'Magias' },
+  { id: 'caracteristicas', label: 'Características' },
+  { id: 'equipamento', label: 'Equipamento' },
+  { id: 'historia', label: 'História' },
+] as const
+
+// Painel animado de uma aba (transicao suave ao trocar).
+function TabPanel({ value, children }: { value: string; children: ReactNode }) {
+  return (
+    <Tabs.Content value={value} className="outline-none">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+        className="space-y-6"
+      >
+        {children}
+      </motion.div>
+    </Tabs.Content>
+  )
+}
+
 export function CharacterEditor() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -56,6 +84,7 @@ export function CharacterEditor() {
   const [saving, setSaving] = useState(false)
   const [, setSavedAt] = useState(false)
   const [dirty, setDirty] = useState(false)
+  const [tab, setTab] = useState<string>('identidade')
 
   useEffect(() => {
     if (!id) return
@@ -237,7 +266,20 @@ export function CharacterEditor() {
         <p className="mb-4 rounded-lg bg-wine/30 px-4 py-2 text-sm text-red-200">{erro}</p>
       )}
 
-      <div className="space-y-6">
+      <Tabs.Root value={tab} onValueChange={setTab}>
+        <Tabs.List className="sticky top-0 z-30 -mx-4 mb-6 flex gap-1 overflow-x-auto border-b border-gold/30 bg-night/90 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6">
+          {EDITOR_TABS.map((t) => (
+            <Tabs.Trigger
+              key={t.id}
+              value={t.id}
+              className="font-display shrink-0 rounded-lg px-3.5 py-1.5 text-sm text-parchment/60 transition hover:text-parchment data-[state=active]:bg-gold data-[state=active]:text-night"
+            >
+              {t.label}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
+
+        <TabPanel value="identidade">
         {/* Identidade */}
         <SectionCard title="Identidade">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -314,7 +356,9 @@ export function CharacterEditor() {
             )}
           </div>
         </SectionCard>
+        </TabPanel>
 
+        <TabPanel value="atributos">
         {/* Atributos + derivados */}
         <SectionCard title="Atributos">
           <AbilityScoresEditor
@@ -369,7 +413,9 @@ export function CharacterEditor() {
             />
           </SectionCard>
         </div>
+        </TabPanel>
 
+        <TabPanel value="combate">
         {/* Combate */}
         <SectionCard title="Combate">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -413,7 +459,9 @@ export function CharacterEditor() {
             onChange={(next) => patch({ attacks: next })}
           />
         </SectionCard>
+        </TabPanel>
 
+        <TabPanel value="magias">
         {/* Magias */}
         <SectionCard title="Conjuração de magias">
           <SpellcastingEditor
@@ -423,7 +471,9 @@ export function CharacterEditor() {
             onChange={(next) => patch({ spellcasting: next })}
           />
         </SectionCard>
+        </TabPanel>
 
+        <TabPanel value="caracteristicas">
         {/* Caracteristicas de classe (automaticas, editaveis) */}
         <SectionCard title="Características de Classe">
           <p className="mb-3 text-xs text-parchment/50">
@@ -436,7 +486,9 @@ export function CharacterEditor() {
             onChange={(next) => patch({ appliedFeatures: next })}
           />
         </SectionCard>
+        </TabPanel>
 
+        <TabPanel value="equipamento">
         {/* Equipamento e moedas */}
         <SectionCard title="Equipamento e tesouro">
           <div className="mb-4 grid grid-cols-5 gap-2">
@@ -460,7 +512,9 @@ export function CharacterEditor() {
             placeholder="Mochila, corda, rações..."
           />
         </SectionCard>
+        </TabPanel>
 
+        <TabPanel value="historia">
         {/* Personalidade */}
         <SectionCard title="Personalidade">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -531,7 +585,8 @@ export function CharacterEditor() {
             rows={6}
           />
         </SectionCard>
-      </div>
+        </TabPanel>
+      </Tabs.Root>
 
       {/* Status de autosave fixo (mobile) */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gold/20 bg-night/95 px-4 py-2 text-center text-sm backdrop-blur sm:hidden">

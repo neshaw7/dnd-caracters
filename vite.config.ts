@@ -14,6 +14,13 @@ export default defineConfig({
   },
   // Pre-empacota as deps no boot, evitando re-otimizacao e reload no meio da sessao.
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@supabase/supabase-js',
+      '@radix-ui/react-tabs',
+      'framer-motion',
+    ],
   },
 })
