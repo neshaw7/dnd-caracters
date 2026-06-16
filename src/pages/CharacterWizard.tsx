@@ -24,6 +24,8 @@ import {
 } from '../lib/rules/rulesStore'
 import { applyRules } from '../lib/rules/autofill'
 import { CLASS_EQUIPMENT, BACKGROUND_EQUIPMENT } from '../lib/rules/equipment'
+import { GuideAvatar } from '../components/wizard/GuideAvatar'
+import { Typewriter } from '../components/wizard/Typewriter'
 import type { ParsedClass, ParsedRace, ParsedBackground } from '../lib/rules/parse'
 import type { AbilityScores, CharacterData } from '../types/character'
 import { emptyCharacterData } from '../types/character'
@@ -191,6 +193,18 @@ export function CharacterWizard() {
   }
 
   const currentStep = steps[stepIndex]
+  const heroName = name || 'viajante'
+  const guideLines: Record<string, string> = {
+    Atributos: `${heroName}... toda lenda começa com o barro de que é feita. Diga-me: do que você é feito? Distribua seus dons.`,
+    Antecedente: 'Antes da glória, houve um passado. De que sombra você emergiu?',
+    Perícias: 'Onde sua mão é mais firme? Mostre-me em que seu talento brilha.',
+    Especialização: 'E onde você é... excepcional? Poucos dominam algo de verdade.',
+    Idiomas: 'As palavras abrem portas que a lâmina não alcança. Que línguas você carrega?',
+    Equipamento: 'Ninguém parte de mãos vazias. O que você leva para a estrada?',
+    Subclasse: 'Há um caminho mais profundo na sua arte. Que trilha você seguirá?',
+    Revisão: 'Então está decidido. Deixe-me contemplar no que você se tornou...',
+  }
+  const guideLine = guideLines[currentStep] ?? '...'
   const profBonus = calcProfBonus(level)
   const usedValues = Object.values(assign).filter((v): v is number => v !== null)
   const classSkillOptions = (cls?.skillOptions ?? []).filter((k) => !bgSkills.includes(k))
@@ -343,6 +357,19 @@ export function CharacterWizard() {
               {i + 1}. {s}
             </span>
           ))}
+        </div>
+      </div>
+
+      {/* Guia narrador */}
+      <div className="mb-6 flex items-start gap-4 rounded-2xl border border-gold/25 bg-gradient-to-br from-night-soft to-night p-4">
+        <GuideAvatar size={116} />
+        <div className="min-h-[112px] flex-1">
+          <p className="font-display text-xs uppercase tracking-[0.2em] text-gold/70">
+            Aldric, o Cronista
+          </p>
+          <p className="mt-2 text-lg italic leading-relaxed text-parchment/90">
+            <Typewriter key={currentStep} text={guideLine} />
+          </p>
         </div>
       </div>
 
