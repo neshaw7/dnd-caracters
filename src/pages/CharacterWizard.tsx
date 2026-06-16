@@ -24,7 +24,7 @@ import {
 } from '../lib/rules/rulesStore'
 import { applyRules } from '../lib/rules/autofill'
 import { CLASS_EQUIPMENT, BACKGROUND_EQUIPMENT } from '../lib/rules/equipment'
-import { GuideAvatar } from '../components/wizard/GuideAvatar'
+import { GuideAvatar, type GuideMood } from '../components/wizard/GuideAvatar'
 import { Typewriter } from '../components/wizard/Typewriter'
 import type { ParsedClass, ParsedRace, ParsedBackground } from '../lib/rules/parse'
 import type { AbilityScores, CharacterData } from '../types/character'
@@ -205,6 +205,17 @@ export function CharacterWizard() {
     Revisão: 'Então está decidido. Deixe-me contemplar no que você se tornou...',
   }
   const guideLine = guideLines[currentStep] ?? '...'
+  const guideMoods: Record<string, GuideMood> = {
+    Atributos: 'neutro',
+    Antecedente: 'pensativo',
+    Perícias: 'neutro',
+    Especialização: 'instigante',
+    Idiomas: 'neutro',
+    Equipamento: 'serio',
+    Subclasse: 'instigante',
+    Revisão: 'satisfeito',
+  }
+  const guideMood = guideMoods[currentStep] ?? 'neutro'
   const profBonus = calcProfBonus(level)
   const usedValues = Object.values(assign).filter((v): v is number => v !== null)
   const classSkillOptions = (cls?.skillOptions ?? []).filter((k) => !bgSkills.includes(k))
@@ -362,7 +373,7 @@ export function CharacterWizard() {
 
       {/* Guia narrador */}
       <div className="mb-6 flex items-start gap-4 rounded-2xl border border-gold/25 bg-gradient-to-br from-night-soft to-night p-4">
-        <GuideAvatar size={116} />
+        <GuideAvatar size={116} mood={guideMood} />
         <div className="min-h-[112px] flex-1">
           <p className="font-display text-xs uppercase tracking-[0.2em] text-gold/70">
             Aldric, o Cronista
