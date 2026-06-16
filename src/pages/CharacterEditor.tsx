@@ -30,6 +30,7 @@ import { SavingThrowsEditor } from '../components/editor/SavingThrowsEditor'
 import { SkillsEditor } from '../components/editor/SkillsEditor'
 import { AttacksEditor } from '../components/editor/AttacksEditor'
 import { SpellcastingEditor } from '../components/editor/SpellcastingEditor'
+import { AppliedFeaturesEditor } from '../components/editor/AppliedFeaturesEditor'
 
 function toggle<T>(arr: T[], value: T): T[] {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
@@ -412,6 +413,19 @@ export function CharacterEditor() {
             abilities={data.abilities}
             proficiencyBonus={profBonus}
             onChange={(next) => patch({ spellcasting: next })}
+          />
+        </SectionCard>
+
+        {/* Caracteristicas de classe (automaticas, editaveis) */}
+        <SectionCard title="Características de Classe">
+          <p className="mb-3 text-xs text-parchment/50">
+            Preenchidas automaticamente pela classe/subclasse/antecedente. Você pode
+            editar o texto, mudar a origem ou excluir. (O botão "Preencher das regras"
+            no topo regenera tudo.)
+          </p>
+          <AppliedFeaturesEditor
+            features={data.appliedFeatures}
+            onChange={(next) => patch({ appliedFeatures: next })}
           />
         </SectionCard>
 
